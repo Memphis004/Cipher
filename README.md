@@ -19,6 +19,11 @@ See [knowledge.md](knowledge.md). The two that shape every file:
 - **Core never emits English prose for the player.** A rejected command returns a
   `ReasonCode` enum plus args; the UI maps that to localized text. Thai is the
   default language.
+- **Core stores no coordinates, meshes, or camera data.** A mission node's interior
+  is a `RoomContents` list of interactables with ids, types, states and abstract slot
+  indices; a base room occupies slots in a layer. Presentation maps slots to 2D, 2.5D
+  or 3D positions. A position that moved without a command in the log would not be
+  replayable, which is why this is a determinism rule and not just a layering one.
 
 ## Layout
 

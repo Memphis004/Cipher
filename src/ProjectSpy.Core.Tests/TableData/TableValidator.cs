@@ -100,8 +100,140 @@ internal sealed class TableValidator
         ValidateIdSpacesAreNonOverlapping(errors);
         ValidateNumericRanges(errors);
         ValidateStageThreeTables(errors);
+        ValidateStageFourTables(errors);
 
         return errors;
+    }
+
+    // ---- stage 4 -------------------------------------------------------------
+
+    /// <summary>
+    /// The keys each stage-4 rule table must contain.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A key that goes missing falls back to a documented constant in Core, which is
+    /// exactly the failure this is here to prevent: the simulation keeps running,
+    /// the number is quietly different from the one a designer approved, and nothing
+    /// says so. <c>skill_cap</c> gets the same treatment for the same reason.
+    /// </para>
+    /// <para>
+    /// Listed here rather than derived from Core, because the point is to catch a key
+    /// the designer deleted — reading the list out of the code that reads it would
+    /// make the check unable to fail.
+    /// </para>
+    /// </remarks>
+    private static readonly string[] RequiredFogKeys =
+    {
+        "fog_base_reveal_radius",
+        "fog_best_infiltration_weight_percent",
+        "fog_average_infiltration_weight_percent",
+        "fog_scout_radius_percent",
+        "fog_gadget_scout_radius_bonus",
+        "fog_terminal_scout_radius_bonus",
+        "fog_silhouette_radius_percent",
+    };
+
+    private static readonly string[] RequiredNodeInteriorKeys =
+    {
+        "interior_slot_count",
+        "interior_container_count_max",
+        "interior_guard_count_max",
+        "interior_terminal_count_max",
+        "interior_door_chance_percent",
+        "interior_door_locked_percent",
+        "interior_trap_chance_percent",
+        "interior_trap_count_max",
+        "interior_locked_container_percent",
+    };
+
+    /// <summary>Checks the stage-4 tables: fog of war and node interiors.</summary>
+    private void ValidateStageFourTables(List<string> errors)
+    {
+        foreach (string key in RequiredFogKeys)
+        {
+            if (!_tables.TbFogRule.DataList.Any(r => r.RuleKey == key))
+                errors.Add($"fog_rule: missing required key '{key}'; fog of war would silently use a fallback");
+        }
+
+        foreach (string key in RequiredNodeInteriorKeys)
+        {
+            if (!_tables.TbNodeInteriorRule.DataList.Any(r => r.RuleKey == key))
+            {
+                errors.Add(
+                    $"node_interior_rule: missing required key '{key}'; node interiors would silently use a fallback");
+            }
+        }
+
+        // The two infiltration weights are what make a specialist worth bringing, so
+        // the average must never outweigh the specialist.
+        int best = FogValue("fog_best_infiltration_weight_percent");
+        int average = FogValue("fog_average_infiltration_weight_percent");
+
+        if (average >= best)
+        {
+            errors.Add(
+                $"fog_rule: average weight ({average}) must be lower than the best-infiltrator "
+                + $"weight ({best}); otherwise team composition stops mattering");
+        }
+
+        // A scout radius wider than the reveal radius would mean every revealed node
+        // is scouted and the distinction collapses.
+        int scoutPercent = FogValue("fog_scout_radius_percent");
+        if (scoutPercent is < 0 or > 100)
+            errors.Add($"fog_rule: fog_scout_radius_percent must be 0..100, was {scoutPercent}");
+
+        // A room with no slots cannot hold anything, and a container cap above the
+        // slot count is unreachable weight the designer thinks they are using.
+        int slotCount = InteriorValue("interior_slot_count");
+        if (slotCount < 1)
+            errors.Add($"node_interior_rule: interior_slot_count must be >= 1, was {slotCount}");
+
+        int containerMax = InteriorValue("interior_container_count_max");
+        int guardMax = InteriorValue("interior_guard_count_max");
+        int terminalMax = InteriorValue("interior_terminal_count_max");
+
+        foreach ((string name, int value) in new[]
+                 {
+                     ("interior_container_count_max", containerMax),
+                     ("interior_guard_count_max", guardMax),
+                     ("interior_terminal_count_max", terminalMax),
+                 })
+        {
+            if (value < 0)
+                errors.Add($"node_interior_rule: {name} must be >= 0, was {value}");
+        }
+
+        // A security node always gets at least one guard and a terminal node at least
+        // one terminal, so a cap of zero would make the guarantee a lie rather than
+        // a weak roll.
+        if (guardMax < 1)
+            errors.Add("node_interior_rule: interior_guard_count_max must be >= 1; a security node always holds a guard");
+
+        if (terminalMax < 1)
+            errors.Add("node_interior_rule: interior_terminal_count_max must be >= 1; a terminal node always holds a terminal");
+    }
+
+    private int FogValue(string key)
+    {
+        foreach (FogRule rule in _tables.TbFogRule.DataList)
+        {
+            if (rule.RuleKey == key)
+                return rule.Value;
+        }
+
+        return 0;
+    }
+
+    private int InteriorValue(string key)
+    {
+        foreach (NodeInteriorRule rule in _tables.TbNodeInteriorRule.DataList)
+        {
+            if (rule.RuleKey == key)
+                return rule.Value;
+        }
+
+        return 0;
     }
 
     // ---- stage 3 -------------------------------------------------------------
@@ -940,6 +1072,8 @@ internal sealed class TableValidator
             ("recruit_rule", _tables.TbRecruitRule.DataList.Select(x => x.Id)),
             ("counter_intel_rule", _tables.TbCounterIntelRule.DataList.Select(x => x.Id)),
             ("burnout_rule", _tables.TbBurnoutRule.DataList.Select(x => x.Id)),
+            ("fog_rule", _tables.TbFogRule.DataList.Select(x => x.Id)),
+            ("node_interior_rule", _tables.TbNodeInteriorRule.DataList.Select(x => x.Id)),
         };
 
         var seen = new Dictionary<int, string>();

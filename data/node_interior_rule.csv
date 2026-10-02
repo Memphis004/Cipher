@@ -1,0 +1,11 @@
+##var,id,rule_key,value
+##type,int,string,int
+,10171,interior_slot_count,6
+,10172,interior_container_count_max,3
+,10173,interior_guard_count_max,2
+,10174,interior_terminal_count_max,2
+,10175,interior_door_chance_percent,60
+,10176,interior_door_locked_percent,40
+,10177,interior_trap_chance_percent,25
+,10178,interior_trap_count_max,1
+,10179,interior_locked_container_percent,20

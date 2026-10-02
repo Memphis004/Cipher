@@ -1,21 +1,26 @@
 namespace ProjectSpy.Core;
 
 /// <summary>
-/// Builds a room at a grid position for a base cost that already includes the depth
-/// modifier.
+/// Places a room into abstract slots and a depth layer, for a cost that already
+/// includes the layer modifier.
 /// </summary>
 /// <remarks>
+/// <para>
 /// The caller supplies the final cost because the base cost comes from
-/// room_type.csv (stage 2) and the depth modifier from <see cref="BaseLayout"/>.
-/// Core deliberately does not look either up yet — that is the stage-2 table work,
-/// and hard-coding it now would create exactly the magic numbers knowledge.md rule 3
-/// forbids.
+/// room_type.csv and the layer modifier from <see cref="BaseLayout"/>.
+/// </para>
+/// <para>
+/// <b>No coordinates (knowledge.md rule 10).</b> The command names slots, a layer,
+/// and the rooms this one touches. Presentation decides what any of that looks
+/// like — which is precisely why the command carries no position: a placement the
+/// player made by dragging a sprite has to be replayable from the log alone.
+/// </para>
 /// </remarks>
 public sealed record BuildRoomCommand(
     int TypeId,
-    int GridX,
-    int GridY,
-    int Width,
+    int Layer,
+    IReadOnlyList<int> SlotIndices,
+    IReadOnlyList<RoomId>? AdjacentRoomIds,
     string NameKey,
     long TotalCost) : ICommand
 {
@@ -37,16 +42,19 @@ public sealed record BuildRoomCommand(
                 CommandArgs.Shortfall(TotalCost, world.Resources.Funds));
         }
 
-        PlacementError error = world.BaseLayout.CheckPlacement(TypeId, GridX, GridY, Width);
+        PlacementError error = world.BaseLayout.CheckPlacement(TypeId, Layer, SlotIndices, AdjacentRoomIds);
         return error switch
         {
             PlacementError.None => CommandResult.Ok,
-            PlacementError.OutOfBounds => CommandResult.Rejected(CommandReason.PlacementOutOfBounds),
-            PlacementError.OverlapsExisting => CommandResult.Rejected(CommandReason.PlacementOverlaps),
-            PlacementError.NonPositiveWidth => CommandResult.Rejected(CommandReason.PlacementNonPositiveWidth),
+            PlacementError.LayerOutOfRange => CommandResult.Rejected(CommandReason.PlacementOutOfRange),
+            PlacementError.SlotOutOfRange => CommandResult.Rejected(CommandReason.PlacementOutOfRange),
+            PlacementError.SlotOccupied => CommandResult.Rejected(CommandReason.PlacementSlotOccupied),
+            PlacementError.NoSlots => CommandResult.Rejected(CommandReason.PlacementNoSlots),
             PlacementError.LockedByStory => CommandResult.Rejected(CommandReason.RoomTypeLocked, CommandArgs.Named(NameKey)),
-            PlacementError.DepthTooShallow => CommandResult.Rejected(CommandReason.RoomDepthTooShallow),
-            _ => CommandResult.Rejected(CommandReason.PlacementOutOfBounds),
+            PlacementError.LayerTooShallow => CommandResult.Rejected(CommandReason.RoomLayerTooShallow),
+            PlacementError.UnknownNeighbour => CommandResult.Rejected(CommandReason.PlacementUnknownNeighbour),
+            PlacementError.NeighbourInOtherLayer => CommandResult.Rejected(CommandReason.PlacementNeighbourOtherLayer),
+            _ => CommandResult.Rejected(CommandReason.PlacementOutOfRange),
         };
     }
 
@@ -63,7 +71,9 @@ public sealed record BuildRoomCommand(
 
         world.Resources = charged;
 
-        Room? room = world.BaseLayout.Place(TypeId, GridX, GridY, Width, world.Clock.Current, out PlacementError error);
+        Room? room = world.BaseLayout.Place(
+            TypeId, Layer, SlotIndices, world.Clock.Current, out PlacementError error, AdjacentRoomIds);
+
         if (room is null)
             throw new InvalidOperationException($"BuildRoomCommand passed validation but placement failed: {error}.");
 

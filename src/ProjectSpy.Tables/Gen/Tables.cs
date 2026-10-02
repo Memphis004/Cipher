@@ -39,6 +39,8 @@ public partial class Tables
     public TbRecruitRule TbRecruitRule {get; }
     public TbCounterIntelRule TbCounterIntelRule {get; }
     public TbBurnoutRule TbBurnoutRule {get; }
+    public TbFogRule TbFogRule {get; }
+    public TbNodeInteriorRule TbNodeInteriorRule {get; }
 
     public Tables(System.Func<string, ByteBuf> loader)
     {
@@ -68,6 +70,8 @@ public partial class Tables
         TbRecruitRule = new TbRecruitRule(loader("tbrecruitrule"));
         TbCounterIntelRule = new TbCounterIntelRule(loader("tbcounterintelrule"));
         TbBurnoutRule = new TbBurnoutRule(loader("tbburnoutrule"));
+        TbFogRule = new TbFogRule(loader("tbfogrule"));
+        TbNodeInteriorRule = new TbNodeInteriorRule(loader("tbnodeinteriorrule"));
         ResolveRef();
     }
     
@@ -99,6 +103,8 @@ public partial class Tables
         TbRecruitRule.ResolveRef(this);
         TbCounterIntelRule.ResolveRef(this);
         TbBurnoutRule.ResolveRef(this);
+        TbFogRule.ResolveRef(this);
+        TbNodeInteriorRule.ResolveRef(this);
     }
 }
 

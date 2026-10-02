@@ -111,12 +111,18 @@ public enum CommandReason
     InsufficientReputation = 13,
 
     // ---- layout ----
-    PlacementOutOfBounds = 20,
-    PlacementOverlaps = 21,
-    PlacementNonPositiveWidth = 22,
+    // Renamed from the grid era (OutOfBounds / Overlaps / NonPositiveWidth /
+    // DepthTooShallow) when Core lost its coordinates (knowledge.md rule 10).
+    // The numeric values are deliberately unchanged: a reason code may end up in
+    // a save or a replay, and renaming a code is not a licence to renumber it.
+    PlacementOutOfRange = 20,
+    PlacementSlotOccupied = 21,
+    PlacementNoSlots = 22,
     RoomTypeLocked = 23,
-    RoomDepthTooShallow = 24,
+    RoomLayerTooShallow = 24,
     RoomDemolished = 25,
+    PlacementUnknownNeighbour = 26,
+    PlacementNeighbourOtherLayer = 27,
 
     // ---- roster ----
     RoomAtCapacity = 30,

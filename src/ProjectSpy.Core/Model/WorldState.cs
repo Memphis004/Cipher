@@ -18,13 +18,13 @@ namespace ProjectSpy.Core;
 public sealed class WorldState
 {
     /// <summary>Creates a fresh world from a root seed.</summary>
-    public WorldState(ulong seed, int baseWidth = 24, int baseHeight = 12)
+    public WorldState(ulong seed, int baseLayerCount = 12, int baseSlotsPerLayer = 24)
     {
         Seed = seed;
         Clock = new GameClock(Tick.Zero);
         RngStreams = new RngStreams(seed);
         Resources = Resources.Starting;
-        BaseLayout = new BaseLayout(baseWidth, baseHeight);
+        BaseLayout = new BaseLayout(baseLayerCount, baseSlotsPerLayer);
         Economy = new EconomyState();
         CounterIntel = new CounterIntelState();
         NextAgentId = 1;
@@ -339,10 +339,37 @@ public sealed class WorldState
                 return false;
             }
 
-            if (room.Width < 1)
+            if (room.SlotCount < 1)
             {
-                problem = "RoomWidthInvalid";
+                problem = "RoomHasNoSlots";
                 return false;
+            }
+
+            if (room.Layer < 0 || room.Layer >= BaseLayout.LayerCount)
+            {
+                problem = "RoomLayerOutOfRange";
+                return false;
+            }
+
+            // Adjacency is symmetric data. A one-sided edge means something wrote
+            // to one room's set without the other, and merging would then depend on
+            // which room the player happened to click. A self-edge passes every
+            // membership check while meaning nothing, so it is rejected explicitly.
+            foreach (RoomId neighbourId in room.AdjacentRoomIds)
+            {
+                if (neighbourId == room.Id)
+                {
+                    problem = $"RoomAdjacentToItself:{room.Id}";
+                    return false;
+                }
+
+                Room? neighbour = BaseLayout.GetRoom(neighbourId);
+
+                if (neighbour is null || !neighbour.AdjacentRoomIds.Contains(room.Id))
+                {
+                    problem = $"RoomAdjacencyAsymmetric:{room.Id}:{neighbourId}";
+                    return false;
+                }
             }
 
             foreach (AgentId agentId in room.AssignedAgentIds)
@@ -470,9 +497,17 @@ public sealed class WorldState
             {
                 hash = Mix(hash, (ulong)room.Id.Value);
                 hash = Mix(hash, (uint)room.TypeId);
-                hash = Mix(hash, (uint)room.GridX);
-                hash = Mix(hash, (uint)room.GridY);
-                hash = Mix(hash, (uint)room.Width);
+                hash = Mix(hash, (uint)room.Layer);
+                hash = Mix(hash, (uint)room.SlotCount);
+
+                // Sorted so the fingerprint cannot depend on HashSet enumeration
+                // order, which is not guaranteed stable across runtimes.
+                foreach (int slot in room.SlotIndices.OrderBy(s => s))
+                    hash = Mix(hash, (uint)slot);
+
+                foreach (RoomId neighbourId in room.AdjacentRoomIds.OrderBy(n => n.Value))
+                    hash = Mix(hash, (ulong)neighbourId.Value);
+
                 hash = Mix(hash, (uint)room.Level);
                 hash = Mix(hash, (uint)room.Condition);
                 hash = Mix(hash, (uint)room.ConstructionTicksRemaining);

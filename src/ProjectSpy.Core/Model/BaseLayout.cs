@@ -6,72 +6,107 @@ namespace ProjectSpy.Core;
 /// </summary>
 public enum PlacementError
 {
+    /// <summary>The placement is legal.</summary>
     None = 0,
-    OutOfBounds = 1,
-    OverlapsExisting = 2,
-    NonPositiveWidth = 3,
-    UnknownRoomType = 4,
-    LockedByStory = 5,
-    DepthTooShallow = 6,
+
+    /// <summary>The room would sit in a layer that does not exist.</summary>
+    LayerOutOfRange = 1,
+
+    /// <summary>A named slot index is outside the layout's slot space.</summary>
+    SlotOutOfRange = 2,
+
+    /// <summary>One or more named slots are already taken.</summary>
+    SlotOccupied = 3,
+
+    /// <summary>No slots were named. A room must occupy at least one.</summary>
+    NoSlots = 4,
+
+    /// <summary>The room type is not in the table.</summary>
+    UnknownRoomType = 5,
+
+    /// <summary>The room type is not unlocked yet.</summary>
+    LockedByStory = 6,
+
+    /// <summary>The layer is shallower than this room type requires.</summary>
+    LayerTooShallow = 7,
+
+    /// <summary>A named neighbour does not exist, or is this room itself.</summary>
+    UnknownNeighbour = 8,
+
+    /// <summary>A named neighbour sits in a different layer, so it cannot touch.</summary>
+    NeighbourInOtherLayer = 9,
 }
 
 /// <summary>
-/// The base cutaway grid: a 2D lattice where depth is the vertical axis.
+/// The base cutaway: rooms distributed across abstract slots and depth layers.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The grid is <c>Width</c> columns by <c>Height</c> rows. A room occupies
-/// <c>Width</c> contiguous cells in a single row; its depth is that row index.
-/// Deeper rooms are more expensive to build — that is what
-/// <see cref="DepthCostModifier"/> encodes, and it is the pressure that makes the
-/// cutaway layout a decision rather than a container.
+/// <b>No coordinates (knowledge.md rule 10).</b> The layout used to be a
+/// <c>Width</c> x <c>Height</c> lattice with an occupancy array, and rooms knew
+/// their cell. That baked a 2D presentation — rooms in rows on a grid — into the
+/// simulation, which made three things wrong at once: the same code could not
+/// present the base any other way, adjacency became arithmetic rather than data,
+/// and a "width" in cells became a field that every save format would inherit.
 /// </para>
 /// <para>
-/// Occupancy is tracked in a flat array rather than by scanning rooms, so
-/// <see cref="CanPlace"/> stays O(width) regardless of how many rooms exist.
+/// What remains is the part that is genuinely a rule: rooms occupy
+/// <em>slot indices</em>, sit in a <em>layer</em>, and are <em>adjacent</em> to an
+/// explicit set of other rooms. Placement declares all three. Presentation maps
+/// slots and layers onto whatever it likes.
+/// </para>
+/// <para>
+/// <b>Layer survives deliberately.</b> Depth is a rule input, not a rendering one:
+/// rooms in deeper layers cost more to build
+/// (<see cref="ApplyDepthCost"/>). Only the <em>interpretation</em> of a layer is
+/// presentational.
+/// </para>
+/// <para>
+/// Adjacency is symmetric and maintained here, so a room never has to trust a
+/// one-sided declaration. Merging therefore does not depend on which of two
+/// adjacent rooms the player clicked — which matters because that order-dependence
+/// was once a real source of replay divergence.
 /// </para>
 /// </remarks>
 public sealed class BaseLayout
 {
-    /// <summary>Total grid columns.</summary>
-    public int Width { get; }
+    /// <summary>How many depth layers the layout has.</summary>
+    public int LayerCount { get; }
 
-    /// <summary>Total grid rows, i.e. the number of depth layers.</summary>
-    public int Height { get; }
+    /// <summary>How many slots each layer has. Slot indices are per-layer.</summary>
+    public int SlotsPerLayer { get; }
 
-    /// <summary>Occupied-cell index per grid cell; 0 means empty.</summary>
-    private readonly int[] _occupancy;
+    /// <summary>Room occupying each slot, keyed by layer then slot. Empty is null.</summary>
+    private readonly Dictionary<int, Dictionary<int, Room>> _slots = new();
 
     private readonly Dictionary<RoomId, Room> _rooms = new();
     private readonly List<Room> _ordered = new();
     private int _nextRoomId = 1;
 
     /// <summary>
-    /// Per-depth build-cost multiplier in percent. Depth 0 costs 100%. Deeper rows
-    /// cost more, which is what pushes the player to expand shallow before deep.
+    /// Per-layer build-cost multiplier in percent. Layer 0 costs 100%. Deeper
+    /// layers cost more, which is what pushes the player to expand shallow before
+    /// deep.
     /// </summary>
-    /// <remarks>
-    /// TODO(stage-2): source the per-depth curve from room_type.csv rather than this
-    /// default, once tables exist. Kept settable so the table loader can replace it
-    /// without touching call sites.
-    /// </remarks>
     public int[] DepthCostModifier { get; private set; }
 
     /// <summary>Room types currently unlocked by story progress.</summary>
     public HashSet<int> UnlockedRoomTypeIds { get; } = new();
 
-    /// <summary>Minimum depth row a given room type may be placed on.</summary>
+    /// <summary>Minimum layer a given room type may be placed in.</summary>
     public Dictionary<int, int> MinimumDepthByType { get; } = new();
 
-    public BaseLayout(int width = 24, int height = 12)
+    public BaseLayout(int layerCount = 12, int slotsPerLayer = 24)
     {
-        if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width), width, "Width must be positive.");
-        if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height), height, "Height must be positive.");
+        if (layerCount <= 0)
+            throw new ArgumentOutOfRangeException(nameof(layerCount), layerCount, "Layer count must be positive.");
 
-        Width = width;
-        Height = height;
-        _occupancy = new int[width * height];
-        DepthCostModifier = DefaultDepthCurve(height);
+        if (slotsPerLayer <= 0)
+            throw new ArgumentOutOfRangeException(nameof(slotsPerLayer), slotsPerLayer, "Slots per layer must be positive.");
+
+        LayerCount = layerCount;
+        SlotsPerLayer = slotsPerLayer;
+        DepthCostModifier = DefaultDepthCurve(layerCount);
     }
 
     /// <summary>All placed rooms, in placement order.</summary>
@@ -80,31 +115,36 @@ public sealed class BaseLayout
     /// <summary>Number of placed rooms.</summary>
     public int RoomCount => _ordered.Count;
 
+    /// <summary>Total slots across every layer.</summary>
+    public int SlotCapacity => LayerCount * SlotsPerLayer;
+
     /// <summary>
-    /// Default depth curve: each row deeper costs 10% more than the row above,
+    /// Default depth curve: each layer deeper costs 10% more than the one above,
     /// capped at 100% extra.
     /// </summary>
-    private static int[] DefaultDepthCurve(int height)
+    private static int[] DefaultDepthCurve(int layerCount)
     {
-        var curve = new int[height];
-        for (int y = 0; y < height; y++)
-            curve[y] = Math.Min(100 + (y * 10), 200);
+        var curve = new int[layerCount];
+        for (int layer = 0; layer < layerCount; layer++)
+            curve[layer] = Math.Min(100 + (layer * 10), 200);
+
         return curve;
     }
 
-    /// <summary>Replaces the depth cost curve. Called by the stage-2 table loader.</summary>
+    /// <summary>Replaces the depth cost curve. Called by the table loader.</summary>
     public void SetDepthCostModifier(IReadOnlyList<int> curve)
     {
         if (curve is null) throw new ArgumentNullException(nameof(curve));
-        if (curve.Count != Height)
+
+        if (curve.Count != LayerCount)
             throw new ArgumentException(
-                $"Depth curve has {curve.Count} entries but the grid has {Height} rows.",
+                $"Depth curve has {curve.Count} entries but the layout has {LayerCount} layers.",
                 nameof(curve));
 
         for (int i = 0; i < curve.Count; i++)
         {
             if (curve[i] <= 0)
-                throw new ArgumentException($"Depth cost modifier at row {i} must be positive.", nameof(curve));
+                throw new ArgumentException($"Depth cost modifier at layer {i} must be positive.", nameof(curve));
         }
 
         DepthCostModifier = curve.ToArray();
@@ -112,41 +152,83 @@ public sealed class BaseLayout
 
     // ---- Placement -----------------------------------------------------------
 
-    /// <summary>Why the given placement would fail, or <see cref="PlacementError.None"/>.</summary>
-    public PlacementError CheckPlacement(int typeId, int x, int y, int width)
+    /// <summary>
+    /// Why the given placement would fail, or <see cref="PlacementError.None"/>.
+    /// </summary>
+    /// <remarks>
+    /// Validates everything before anything is mutated, so a rejected placement
+    /// leaves the layout byte-for-byte as it was.
+    /// </remarks>
+    public PlacementError CheckPlacement(
+        int typeId,
+        int layer,
+        IReadOnlyCollection<int> slotIndices,
+        IReadOnlyCollection<RoomId>? adjacentRoomIds = null)
     {
-        if (width <= 0)
-            return PlacementError.NonPositiveWidth;
+        if (slotIndices is null || slotIndices.Count == 0)
+            return PlacementError.NoSlots;
 
-        if (x < 0 || y < 0 || y >= Height || x + width > Width)
-            return PlacementError.OutOfBounds;
+        if (layer < 0 || layer >= LayerCount)
+            return PlacementError.LayerOutOfRange;
+
+        foreach (int slot in slotIndices)
+        {
+            if (slot < 0 || slot >= SlotsPerLayer)
+                return PlacementError.SlotOutOfRange;
+        }
+
+        // Deduped so a repeated slot in the input reports as occupied-by-itself
+        // rather than quietly passing twice.
+        foreach (int slot in slotIndices.Distinct())
+        {
+            if (RoomInSlot(layer, slot) is not null)
+                return PlacementError.SlotOccupied;
+        }
 
         if (!UnlockedRoomTypeIds.Contains(typeId) && UnlockedRoomTypeIds.Count > 0)
             return PlacementError.LockedByStory;
 
-        if (MinimumDepthByType.TryGetValue(typeId, out int minDepth) && y < minDepth)
-            return PlacementError.DepthTooShallow;
+        if (MinimumDepthByType.TryGetValue(typeId, out int minLayer) && layer < minLayer)
+            return PlacementError.LayerTooShallow;
 
-        for (int cx = x; cx < x + width; cx++)
+        if (adjacentRoomIds is not null)
         {
-            if (_occupancy[(y * Width) + cx] != 0)
-                return PlacementError.OverlapsExisting;
+            foreach (RoomId neighbourId in adjacentRoomIds)
+            {
+                Room? neighbour = GetRoom(neighbourId);
+
+                if (neighbour is null || neighbourId == RoomId.None)
+                    return PlacementError.UnknownNeighbour;
+
+                if (neighbour.Layer != layer)
+                    return PlacementError.NeighbourInOtherLayer;
+            }
         }
 
         return PlacementError.None;
     }
 
     /// <summary>True when the placement would be accepted.</summary>
-    public bool CanPlace(int typeId, int x, int y, int width)
-        => CheckPlacement(typeId, x, y, width) == PlacementError.None;
+    public bool CanPlace(
+        int typeId,
+        int layer,
+        IReadOnlyCollection<int> slotIndices,
+        IReadOnlyCollection<RoomId>? adjacentRoomIds = null)
+        => CheckPlacement(typeId, layer, slotIndices, adjacentRoomIds) == PlacementError.None;
 
     /// <summary>
     /// Places a room. Returns the new room, or <c>null</c> with
-    /// <paramref name="error"/> set. The grid is never left partially modified.
+    /// <paramref name="error"/> set. The layout is never left partially modified.
     /// </summary>
-    public Room? Place(int typeId, int x, int y, int width, Tick builtOnTick, out PlacementError error)
+    public Room? Place(
+        int typeId,
+        int layer,
+        IReadOnlyCollection<int> slotIndices,
+        Tick builtOnTick,
+        out PlacementError error,
+        IReadOnlyCollection<RoomId>? adjacentRoomIds = null)
     {
-        error = CheckPlacement(typeId, x, y, width);
+        error = CheckPlacement(typeId, layer, slotIndices, adjacentRoomIds);
         if (error != PlacementError.None)
             return null;
 
@@ -154,53 +236,118 @@ public sealed class BaseLayout
         {
             Id = new RoomId(_nextRoomId++),
             TypeId = typeId,
-            GridX = x,
-            GridY = y,
-            Width = width,
+            Layer = layer,
             Level = 1,
             Condition = Room.MaxCondition,
             BuiltOnTick = builtOnTick,
         };
 
-        for (int cx = x; cx < x + width; cx++)
-            _occupancy[(y * Width) + cx] = room.Id.Value;
+        foreach (int slot in slotIndices.Distinct())
+        {
+            room.SlotIndices.Add(slot);
+            OccupySlot(layer, slot, room);
+        }
 
         _rooms[room.Id] = room;
         _ordered.Add(room);
+
+        LinkNeighbours(room, adjacentRoomIds);
         return room;
     }
 
     /// <summary>Places a room, discarding the failure reason.</summary>
-    public Room? Place(int typeId, int x, int y, int width, Tick builtOnTick)
-        => Place(typeId, x, y, width, builtOnTick, out _);
+    public Room? Place(
+        int typeId,
+        int layer,
+        IReadOnlyCollection<int> slotIndices,
+        Tick builtOnTick,
+        IReadOnlyCollection<RoomId>? adjacentRoomIds = null)
+        => Place(typeId, layer, slotIndices, builtOnTick, out _, adjacentRoomIds);
 
-    /// <summary>Removes a room and frees its cells. Returns false if it was not placed.</summary>
+    /// <summary>Removes a room, frees its slots and unlinks its neighbours.</summary>
     public bool Demolish(RoomId id)
     {
         if (!_rooms.TryGetValue(id, out Room? room))
             return false;
 
-        for (int cx = room.GridX; cx <= room.MaxX; cx++)
+        foreach (int slot in room.SlotIndices)
+            VacateSlot(room.Layer, slot, id);
+
+        // Symmetry has to be repaired on both sides or the survivor keeps a
+        // dangling adjacency to a room that no longer exists.
+        foreach (RoomId neighbourId in room.AdjacentRoomIds.ToArray())
         {
-            int index = (room.GridY * Width) + cx;
-            if (index >= 0 && index < _occupancy.Length)
-                _occupancy[index] = 0;
+            if (_rooms.TryGetValue(neighbourId, out Room? neighbour))
+                neighbour.AdjacentRoomIds.Remove(id);
         }
 
+        room.AdjacentRoomIds.Clear();
         _rooms.Remove(id);
         _ordered.Remove(room);
         return true;
     }
 
+    // ---- adjacency -----------------------------------------------------------
+
+    /// <summary>
+    /// Makes <paramref name="adjacency"/> symmetric between the given rooms.
+    /// </summary>
+    /// <remarks>
+    /// Every mutation of adjacency goes through here. Asymmetric adjacency would
+    /// make merging depend on which room the player clicked, which is precisely
+    /// the order-dependence that makes replays diverge.
+    /// </remarks>
+    private void LinkNeighbours(Room room, IReadOnlyCollection<RoomId>? adjacency)
+    {
+        if (adjacency is null)
+            return;
+
+        foreach (RoomId neighbourId in adjacency)
+        {
+            if (!_rooms.TryGetValue(neighbourId, out Room? neighbour))
+                continue;
+
+            if (neighbour.Id == room.Id)
+                continue;
+
+            room.AdjacentRoomIds.Add(neighbour.Id);
+            neighbour.AdjacentRoomIds.Add(room.Id);
+        }
+    }
+
+    /// <summary>True when two rooms declare each other adjacent.</summary>
+    public bool AreAdjacent(RoomId a, RoomId b)
+    {
+        Room? room = GetRoom(a);
+        return room is not null && room.AdjacentRoomIds.Contains(b);
+    }
+
+    /// <summary>Every room declared adjacent to <paramref name="id"/>, in placement order.</summary>
+    public IReadOnlyList<Room> NeighboursOf(RoomId id)
+    {
+        Room? room = GetRoom(id);
+        if (room is null)
+            return Array.Empty<Room>();
+
+        var matches = new List<Room>();
+        foreach (Room candidate in _ordered)
+        {
+            if (candidate.Id != id && room.AdjacentRoomIds.Contains(candidate.Id))
+                matches.Add(candidate);
+        }
+
+        return matches;
+    }
+
     // ---- Merging -------------------------------------------------------------
 
     /// <summary>
-    /// Folds every adjacent, mergeable neighbour into the leftmost room of the group,
-    /// repeating until no further merge is possible.
+    /// Folds every adjacent, mergeable neighbour into the canonical room of the
+    /// group, repeating until no further merge is possible.
     /// </summary>
     /// <returns>
-    /// The id of the surviving room — always the leftmost member of the merged span,
-    /// so the result does not depend on which room the player happened to click — or
+    /// The id of the surviving room — always the lowest-slot member of the merged
+    /// group, so the result does not depend on which room the player clicked — or
     /// <see cref="RoomId.None"/> if the id is unknown.
     /// </returns>
     public RoomId TryMergeAdjacent(RoomId id)
@@ -208,16 +355,16 @@ public sealed class BaseLayout
         if (!_rooms.TryGetValue(id, out Room? room))
             return RoomId.None;
 
-        // Re-anchor on the leftmost room of the connected group. Absorbing a
-        // left-hand neighbour into a right-hand room would otherwise leave the
-        // surviving room at a different grid position depending on click order,
-        // which is exactly the kind of order-dependence that makes replays diverge.
+        // Re-anchor on the canonical room of the connected group. Absorbing a
+        // low-slot neighbour into a high-slot room would otherwise leave the
+        // survivor in a different state depending on click order, which is exactly
+        // the kind of order-dependence that makes replays diverge.
         foreach (Room candidate in _ordered.ToArray())
         {
             if (ReferenceEquals(candidate, room))
                 continue;
 
-            if (room.CanMergeWith(candidate) && candidate.GridX < room.GridX)
+            if (room.CanMergeWith(candidate) && candidate.LowestSlotIndex < room.LowestSlotIndex)
                 room = candidate;
         }
 
@@ -235,8 +382,13 @@ public sealed class BaseLayout
                 if (!room.CanMergeWith(candidate))
                     continue;
 
+                RoomId survivor = room.Id;
                 room.Absorb(candidate);
                 Demolish(candidate.Id);
+
+                // Demolish stripped the absorbed room's edges out of the survivor,
+                // so re-link what is left before merging any further.
+                RebindAdjacency(survivor);
                 merged = true;
                 break;
             }
@@ -245,7 +397,7 @@ public sealed class BaseLayout
         return room.Id;
     }
 
-    /// <summary>Rooms on a given row that could merge into <paramref name="id"/>'s room.</summary>
+    /// <summary>Rooms that could merge into <paramref name="id"/>'s room.</summary>
     public IReadOnlyList<Room> FindMergeCandidates(RoomId id)
     {
         if (!_rooms.TryGetValue(id, out Room? room))
@@ -264,31 +416,79 @@ public sealed class BaseLayout
         return candidates;
     }
 
-    // ---- Occupancy queries ---------------------------------------------------
-
-    /// <summary>True when the cell is inside the grid and occupied.</summary>
-    public bool IsOccupied(int x, int y) => RoomAt(x, y) is not null;
-
-    /// <summary>The room covering the cell, or null. Out-of-grid cells return null.</summary>
-    public Room? RoomAt(int x, int y)
+    /// <summary>
+    /// Drops edges to rooms that no longer exist and links the survivor to its
+    /// absorbed room's remaining neighbours.
+    /// </summary>
+    private void RebindAdjacency(RoomId id)
     {
-        if (x < 0 || y < 0 || x >= Width || y >= Height)
+        if (!_rooms.TryGetValue(id, out Room? room))
+            return;
+
+        // Drop edges to rooms that no longer exist, and any self-edge. Symmetry was
+        // maintained by Demolish on the way out, so only the survivor's own set needs
+        // repairing here.
+        room.AdjacentRoomIds.RemoveWhere(
+            neighbourId => neighbourId == room.Id || !_rooms.ContainsKey(neighbourId));
+
+        foreach (Room neighbour in _ordered)
+        {
+            if (neighbour.Id == room.Id)
+                continue;
+
+            if (!room.AdjacentRoomIds.Contains(neighbour.Id))
+                continue;
+
+            neighbour.AdjacentRoomIds.Add(room.Id);
+        }
+    }
+
+    // ---- occupancy queries ---------------------------------------------------
+
+    /// <summary>True when the slot is inside the layout and occupied.</summary>
+    public bool IsSlotOccupied(int layer, int slotIndex) => RoomInSlot(layer, slotIndex) is not null;
+
+    /// <summary>The room occupying a slot, or null.</summary>
+    public Room? RoomInSlot(int layer, int slotIndex)
+    {
+        if (!_slots.TryGetValue(layer, out Dictionary<int, Room>? row))
             return null;
 
-        int id = _occupancy[(y * Width) + x];
-        return id == 0 ? null : _rooms[new RoomId(id)];
+        return row.TryGetValue(slotIndex, out Room? room) ? room : null;
+    }
+
+    private void OccupySlot(int layer, int slotIndex, Room room)
+    {
+        if (!_slots.TryGetValue(layer, out Dictionary<int, Room>? row))
+        {
+            row = new Dictionary<int, Room>();
+            _slots[layer] = row;
+        }
+
+        row[slotIndex] = room;
+    }
+
+    private void VacateSlot(int layer, int slotIndex, RoomId owner)
+    {
+        if (!_slots.TryGetValue(layer, out Dictionary<int, Room>? row))
+            return;
+
+        // Only clear the slot if this room still owns it. Clearing blindly would
+        // let a stale reference erase a room that has since taken the slot.
+        if (row.TryGetValue(slotIndex, out Room? room) && room.Id == owner)
+            row.Remove(slotIndex);
     }
 
     /// <summary>Looks up a room by id.</summary>
     public Room? GetRoom(RoomId id) => _rooms.TryGetValue(id, out Room? room) ? room : null;
 
-    /// <summary>Rooms on a given depth row.</summary>
-    public IReadOnlyList<Room> RoomsAtDepth(int y)
+    /// <summary>Rooms in a given depth layer.</summary>
+    public IReadOnlyList<Room> RoomsAtLayer(int layer)
     {
         var matches = new List<Room>();
         foreach (Room room in _ordered)
         {
-            if (room.GridY == y)
+            if (room.Layer == layer)
                 matches.Add(room);
         }
 
@@ -308,21 +508,17 @@ public sealed class BaseLayout
         return matches;
     }
 
-    /// <summary>Total occupied cells.</summary>
-    public int OccupiedCellCount()
+    /// <summary>Total occupied slots.</summary>
+    public int OccupiedSlotCount()
     {
         int count = 0;
-        foreach (int cell in _occupancy)
-        {
-            if (cell != 0)
-                count++;
-        }
+        foreach (Room room in _ordered)
+            count += room.SlotCount;
 
         return count;
     }
 
-    /// <summary>Fraction of the grid that is built on, in whole percent.</summary>
-    public int OccupancyPercent() => (OccupiedCellCount() * 100) / (Width * Height);
+    // ---- cost ----------------------------------------------------------------
 
     /// <summary>
     /// Applies a depth cost modifier to a base cost.
@@ -331,18 +527,18 @@ public sealed class BaseLayout
     /// Integer arithmetic throughout: a float here would make build costs depend on
     /// rounding, and costs are part of the save contract (knowledge.md rule 6).
     /// </remarks>
-    public long ApplyDepthCost(long baseCost, int y)
+    public long ApplyDepthCost(long baseCost, int layer)
     {
         if (baseCost <= 0)
             return 0;
 
-        if (y < 0 || y >= Height)
-            throw new ArgumentOutOfRangeException(nameof(y), y, "Depth row out of range.");
+        if (layer < 0 || layer >= LayerCount)
+            throw new ArgumentOutOfRangeException(nameof(layer), layer, "Layer out of range.");
 
-        int modifier = DepthCostModifier[y];
+        int modifier = DepthCostModifier[layer];
         return baseCost + ((baseCost * (modifier - 100)) / 100);
     }
 
-    /// <summary>The build cost of a room at a given depth, after the modifier.</summary>
-    public long ComputeBuildCost(long baseCost, int y) => ApplyDepthCost(baseCost, y);
+    /// <summary>The build cost of a room in a given layer, after the modifier.</summary>
+    public long ComputeBuildCost(long baseCost, int layer) => ApplyDepthCost(baseCost, layer);
 }

@@ -48,6 +48,8 @@ public class TableValidatorTests
         Assert.NotEmpty(t.TbLootTable.DataList);
         Assert.NotEmpty(t.TbHeatTier.DataList);
         Assert.NotEmpty(t.TbContractOffer.DataList);
+        Assert.NotEmpty(t.TbFogRule.DataList);
+        Assert.NotEmpty(t.TbNodeInteriorRule.DataList);
     }
 
     [Fact]

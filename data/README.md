@@ -98,6 +98,23 @@ forced `burnout_rule` up a band.
 | `counter_intel_rule` | 10121–10133 | keyed by `rule_key`, not id |
 | `burnout_rule` | 10141–10147 | keyed by `rule_key`, not id |
 
+### Stage-4 mission tables
+
+Also keyed by `rule_key`, same reasoning: these are formula constants rather than
+content, and the keys are what `SimulationRules` asks for by name.
+
+| Table | Id range | Notes |
+|---|---|---|
+| `fog_rule` | 10151–10157 | reveal-radius formula and the scout/gadget/terminal bonuses |
+| `node_interior_rule` | 10171–10179 | how many containers, guards, doors and traps a node's interior holds |
+
+`fog_rule` holds the reveal-radius formula's constants rather than having them in Core,
+because the whole reason a specialist is worth deploying is a ratio between two of
+them — which is exactly the kind of number a designer will want to try changing.
+`fog_best_infiltration_weight_percent` must stay above
+`fog_average_infiltration_weight_percent`, and `TableValidator` fails the build if it
+does not, because reversing them makes team composition stop mattering entirely.
+
 `mental_ratio_percent` lives on a `recovery_rule` row rather than being a constant,
 but only the first row's value is meaningful — it is the organisation-wide ratio, and
 the validator reads it from there. Per-room percentages are the room's own rates.

@@ -50,8 +50,8 @@ public sealed class GameSession : IEventSink
     private readonly List<ReplayEntry> _replayLog = new();
 
     /// <summary>Creates a session over a fresh world.</summary>
-    public GameSession(ulong seed, int baseWidth = 24, int baseHeight = 12)
-        : this(new WorldState(seed, baseWidth, baseHeight))
+    public GameSession(ulong seed, int baseLayerCount = 12, int baseSlotsPerLayer = 24)
+        : this(new WorldState(seed, baseLayerCount, baseSlotsPerLayer))
     {
     }
 
@@ -257,7 +257,7 @@ public sealed class GameSession : IEventSink
     /// copy.
     /// </remarks>
     public GameSession CreateReplaySession()
-        => new(World.Seed, World.BaseLayout.Width, World.BaseLayout.Height);
+        => new(World.Seed, World.BaseLayout.LayerCount, World.BaseLayout.SlotsPerLayer);
 
     /// <summary>
     /// Replays this session's recorded input against a fresh session and compares the

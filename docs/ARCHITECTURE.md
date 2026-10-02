@@ -197,6 +197,65 @@ refresh, and the counter-intel step budget — guarded by `WorldState.LastSettle
 that advancing a large batch of ticks at once still settles each week exactly once
 rather than once per tick spent on the settlement day.
 
+## No coordinates in Core
+
+Core stores no world-space positions, meshes, or camera data (knowledge.md rule 10).
+This is not only a Unity-boundary concern: a position mutated by anything other than a
+command is not replayable, so any coordinate in Core is determinism debt.
+
+### Mission interiors
+
+`RoomContents` is the whole of a node's interior as far as the simulation is
+concerned — a list of interactables, each with a stable id, a type, a state, and an
+abstract `SlotIndex`. Presentation decides that slot 3 is two metres to the left in 3D,
+the leftmost alcove in 2D, or nothing at all.
+
+Walking around a room is presentation. What reaches Core is always an `ICommand`, which
+is what keeps a traversal replayable.
+
+### The base layout
+
+The base was a `Width` x `Height` lattice with an occupancy array, and rooms knew
+their cell. That put a 2D presentation decision inside the simulation. It is now:
+
+| Was | Is |
+|---|---|
+| `GridX`, `GridY`, `Width` | `SlotIndices` (a set), `Layer` |
+| adjacency derived by comparing coordinates | `AdjacentRoomIds`, explicit and symmetric |
+| `RoomAt(x, y)` | `RoomInSlot(layer, slot)` |
+| `RoomsAtDepth(y)` | `RoomsAtLayer(layer)` |
+| `OccupiedCellCount` / `OccupancyPercent` | `OccupiedSlotCount` |
+| `PlacementError.OutOfBounds` / `OverlapsExisting` / `NonPositiveWidth` | `LayerOutOfRange` / `SlotOccupied` / `NoSlots` |
+
+Two things survived deliberately, because they are rules rather than rendering:
+
+- **Layer.** Depth is a rule input: rooms in deeper layers cost more to build
+  (`ApplyDepthCost`). Only the *interpretation* of a layer is presentational.
+- **Merge-adjacency.** Two rooms can still be required to share a layer, which is what
+  stops a room absorbing something placed directly above it.
+
+### Two consequences worth stating plainly
+
+**Adjacency is now data, so distance no longer implies it.** Two rooms can be
+numerically side by side and not touch, because Presentation decides who touches whom.
+Anything that wants grid behaviour has to declare it — which is exactly the work a
+floorplan UI would do anyway.
+
+**Placement is now a richer command.** `BuildRoomCommand` carries
+`(TypeId, Layer, SlotIndices, AdjacentRoomIds, NameKey, TotalCost)` rather than a grid
+position. `CorePurityTests` fails the build if a coordinate-shaped member reappears.
+
+Test code that wants to think in grid terms goes through `GridCommands.Build` and
+`World.Place`, which translate a grid triple into slots, a layer, and derived
+adjacency — the same translation a real floorplan UI performs. That kept ~115 call
+sites unchanged while Core stayed coordinate-free.
+
+### Not yet done
+
+`ICommand` still has no tick cost. The rule requires every rule-affecting action to
+carry one, and today commands apply instantly; the first timed actions arrive with
+stage 4's mission interiors.
+
 ## Determinism
 
 Three mechanisms, in order of how much they matter:
@@ -214,6 +273,10 @@ Three mechanisms, in order of how much they matter:
    over the compiled assembly and fails if any such type appears on Core's public
    surface or in its reference table. Stage 5 adds the full grep audit and a Roslyn
    analyzer.
+4. **No coordinates.** Also enforced by `CorePurityTests`, by member name. A field
+   called `GridX` passes every type-level check — the type is an innocent `int` — so
+   the rule has to be enforced on names as well as types. See "No coordinates in
+   Core" above.
 
 `WorldState.ComputeStateHash()` produces a stable, integer-only fingerprint
 including RNG state — two worlds that look identical but will roll differently are
@@ -327,3 +390,6 @@ so each one is caught at build time.
 
 - `docs/MOLE_DESIGN.md` — why the mole is a fair mystery, the Heat/mission-log
   reasoning chain, and what breaks the correlation if you tune it.
+- `docs/FLOORPLAN_UI.md` — the Stage 8 contract for the base: slot ↔ screen mapping,
+  how adjacency is derived, what Presentation owns now that Core does not, and three
+  gaps to close before the UI is built.

@@ -71,6 +71,14 @@ Command/event layer (this is how Unity will talk to Core):
 4. Report the exact package versions you pinned.
 ````
 
+## (เพิ่มใน knowledge.md) Presentation-agnostic rule
+Core never stores world-space coordinates, meshes, or camera data. A mission node's
+interior is described abstractly as `RoomContents`: a list of interactables
+(container, door, terminal, guard, trap, exit) each with a stable id, a type, a
+state, and an abstract slot index. The presentation layer decides how slots map to
+2D, 2.5D or 3D positions. Walking inside a room is presentation only; every
+rule-affecting action is an ICommand with a tick cost.
+
 ---
 
 ## Stage 2 — Data tables
@@ -224,6 +232,15 @@ Stage 4 — The heart of the game. Take this one slowly and test it heavily.
    - Outcome: ObjectiveComplete / PartialSuccess / Aborted / Failed / Burned, each with a
      different reward and consequence profile including capture rolls for agents who were
      not at Extraction when the mission ended.
+  - Room-level interaction commands, in addition to node-level Advance:
+    EnterNode(nodeId), Search(interactableId), PickLock(doorId), Hack(terminalId),
+    Sneak vs Rush (affects tick cost and alarm), Leave(nodeId).
+    - Each costs ticks, rolls on the Mission stream, and returns a CommandResult.
+    - RoomContents for a Hidden node is generated lazily on first EnterNode, keyed by
+      MapSeed + nodeId, and must not be enumerable before that (keep the existing test).
+    - Auto-resolve mode (the current MissionRunner behaviour) must remain available and
+      be built on the same commands, so the balance simulator and a human player exercise
+    identical rules.     
 
 4. `MissionReport` — a structured, replayable log of every node entered, roll made,
    modifier applied and consequence. This is both the player-facing after-action report and

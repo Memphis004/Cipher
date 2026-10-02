@@ -130,9 +130,13 @@ public static class WorldStateSerializer
         {
             Append(sb, "room.id", room.Id.Value);
             Append(sb, "room.type", room.TypeId);
-            Append(sb, "room.x", room.GridX);
-            Append(sb, "room.y", room.GridY);
-            Append(sb, "room.width", room.Width);
+            Append(sb, "room.layer", room.Layer);
+
+            // Sorted: HashSet enumeration order is not guaranteed stable across
+            // runtimes, and a canonical dump whose bytes move on their own is not
+            // canonical.
+            Append(sb, "room.slots", string.Join(",", room.SlotIndices.OrderBy(s => s)));
+            Append(sb, "room.adjacent", string.Join(",", room.AdjacentRoomIds.Select(n => n.Value).OrderBy(v => v)));
             Append(sb, "room.level", room.Level);
             Append(sb, "room.condition", room.Condition);
             Append(sb, "room.construction", room.ConstructionTicksRemaining);

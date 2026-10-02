@@ -52,11 +52,11 @@ public class RoomDefinitionsTests
     {
         WorldState world = NewWorld();
 
-        // Vault (4017) declares min_depth 3 in room_type.csv, so shallower rows are
-        // refused and depth 3 is accepted.
-        Assert.Equal(PlacementError.DepthTooShallow, world.BaseLayout.CheckPlacement(4017, 0, 0, 2));
-        Assert.Equal(PlacementError.DepthTooShallow, world.BaseLayout.CheckPlacement(4017, 0, 2, 2));
-        Assert.Equal(PlacementError.None, world.BaseLayout.CheckPlacement(4017, 0, 3, 2));
+        // Vault (4017) declares min_depth 3 in room_type.csv, so shallower layers are
+        // refused and layer 3 is accepted.
+        Assert.Equal(PlacementError.LayerTooShallow, world.BaseLayout.CheckPlacement(4017, 0, new[] { 0, 1 }));
+        Assert.Equal(PlacementError.LayerTooShallow, world.BaseLayout.CheckPlacement(4017, 2, new[] { 0, 1 }));
+        Assert.Equal(PlacementError.None, world.BaseLayout.CheckPlacement(4017, 3, new[] { 0, 1 }));
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class RoomDefinitionsTests
         RoomDefinitions.UnlockAll(world.BaseLayout);
 
         var session = new GameSession(world);
-        session.Execute(new BuildRoomCommand(4001, 0, 0, 2, "room.gym", 1200));
+        session.Execute(GridCommands.Build(4001, 0, 0, 2, "room.gym", 1200, session.World));
 
         Room room = Assert.Single(session.World.BaseLayout.Rooms);
 
@@ -121,7 +121,7 @@ public class RoomDefinitionsTests
 
         // Ops Center (4010) has 6 slots, so six agents fit and a seventh is refused.
         // It also declares min_depth 1, so it must be placed on row 1 or below.
-        CommandResult built = session.Execute(new BuildRoomCommand(4010, 0, 1, 4, "room.ops_center", 2600));
+        CommandResult built = session.Execute(GridCommands.Build(4010, 0, 1, 4, "room.ops_center", 2600, session.World));
         Assert.True(built.IsOk, built.MessageKey);
 
         Room room = session.World.BaseLayout.Rooms[0];

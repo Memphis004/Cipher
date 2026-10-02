@@ -26,3 +26,5 @@
 ,TbRecruitRule,RecruitRule,,map,,,true,recruit_rule.csv,,
 ,TbCounterIntelRule,CounterIntelRule,,map,,,true,counter_intel_rule.csv,,
 ,TbBurnoutRule,BurnoutRule,,map,,,true,burnout_rule.csv,,
+,TbFogRule,FogRule,,map,,,true,fog_rule.csv,,
+,TbNodeInteriorRule,NodeInteriorRule,,map,,,true,node_interior_rule.csv,,

@@ -1,0 +1,9 @@
+##var,id,rule_key,value
+##type,int,string,int
+,10151,fog_base_reveal_radius,1
+,10152,fog_best_infiltration_weight_percent,100
+,10153,fog_average_infiltration_weight_percent,50
+,10154,fog_scout_radius_percent,50
+,10155,fog_gadget_scout_radius_bonus,2
+,10156,fog_terminal_scout_radius_bonus,2
+,10157,fog_silhouette_radius_percent,100

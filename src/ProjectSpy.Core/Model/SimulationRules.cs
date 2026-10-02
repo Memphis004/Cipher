@@ -402,6 +402,199 @@ public static class SimulationRules
     public static int ReputationTier(int reputation)
         => reputation >= 50 ? 2 : reputation >= 20 ? 1 : 0;
 
+    // ---- stage 4: mission maps ------------------------------------------------
+
+    /// <summary>
+    /// The map generation row for a tier, or null when the tier has no row.
+    /// </summary>
+    public static MapGenRule? MapGenRuleFor(int tier)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (MapGenRule rule in t.TbMapGenRule.DataList)
+        {
+            if (rule.Tier == tier)
+                return rule;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every map generation row, in table order.</summary>
+    public static IReadOnlyList<MapGenRule> AllMapGenRules()
+        => TablesOrNull?.TbMapGenRule.DataList ?? Array.Empty<MapGenRule>();
+
+    /// <summary>A mission type row by id, or null.</summary>
+    public static MissionType? MissionTypeFor(int missionTypeId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbMissionType.GetOrDefault(missionTypeId);
+    }
+
+    /// <summary>Every <c>node_room</c> row, in table order.</summary>
+    public static IReadOnlyList<NodeRoom> AllNodeRooms()
+        => TablesOrNull?.TbNodeRoom.DataList ?? Array.Empty<NodeRoom>();
+
+    /// <summary>
+    /// The node rooms a map at <paramref name="tier"/> is allowed to assign, in table
+    /// order.
+    /// </summary>
+    /// <remarks>
+    /// Filtering happens here rather than in the generator so that "which rooms can
+    /// a tier use" has exactly one answer, shared by the generator, the fog of war
+    /// and the validator.
+    /// </remarks>
+    public static IReadOnlyList<NodeRoom> NodeRoomsForTier(int tier)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return Array.Empty<NodeRoom>();
+
+        var allowed = new List<NodeRoom>();
+        foreach (NodeRoom room in t.TbNodeRoom.DataList)
+        {
+            if (room.Weight <= 0)
+                continue;
+
+            if (TierList(room.AllowedTiers).Contains(tier))
+                allowed.Add(room);
+        }
+
+        return allowed;
+    }
+
+    /// <summary>
+    /// The node rooms carrying the <c>security</c> tag that a map at
+    /// <paramref name="tier"/> is allowed to assign.
+    /// </summary>
+    /// <remarks>
+    /// The generator needs this to build the checkpoint layer that guarantees a
+    /// security node on every route to the objective. If a tier had no security
+    /// rooms at all the map could not honour that guarantee, so this returning
+    /// empty is a data error the table validator catches rather than something to
+    /// paper over at runtime.
+    /// </remarks>
+    public static IReadOnlyList<NodeRoom> SecurityNodeRoomsForTier(int tier)
+    {
+        var security = new List<NodeRoom>();
+        foreach (NodeRoom room in NodeRoomsForTier(tier))
+        {
+            if (Tags(room.Tags).Contains("security"))
+                security.Add(room);
+        }
+
+        return security;
+    }
+
+    /// <summary>Mission event rows by id, for a mission's event resolution.</summary>
+    public static MissionEvent? MissionEventFor(int eventId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbMissionEvent.GetOrDefault(eventId);
+    }
+
+    /// <summary>Every mission event row, in table order.</summary>
+    public static IReadOnlyList<MissionEvent> AllMissionEvents()
+        => TablesOrNull?.TbMissionEvent.DataList ?? Array.Empty<MissionEvent>();
+
+    /// <summary>
+    /// Splits a comma-separated table list into trimmed, non-empty entries.
+    /// </summary>
+    /// <remarks>
+    /// <c>node_room.tags</c>, <c>allowed_tiers</c> and <c>possible_event_ids</c> are
+    /// all stored as one string column. Parsing lives here so that an empty field, a
+    /// stray space or a trailing comma is handled the same way everywhere instead of
+    /// becoming a per-callsite surprise.
+    /// </remarks>
+    public static IReadOnlyList<string> Tags(string? value) => SplitList(value);
+
+    /// <summary>Parses a comma-separated list of ints, skipping anything unparseable.</summary>
+    public static IReadOnlyList<int> IntList(string? value)
+    {
+        var parsed = new List<int>();
+        foreach (string part in SplitList(value))
+        {
+            if (int.TryParse(part, out int number))
+                parsed.Add(number);
+        }
+
+        return parsed;
+    }
+
+    private static IReadOnlyList<string> SplitList(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Array.Empty<string>();
+
+        string[] parts = value.Split(',');
+        var cleaned = new List<string>(parts.Length);
+
+        foreach (string part in parts)
+        {
+            string trimmed = part.Trim();
+            if (trimmed.Length > 0)
+                cleaned.Add(trimmed);
+        }
+
+        return cleaned;
+    }
+
+    private static IReadOnlyList<int> TierList(string? value) => IntList(value);
+
+    // ---- stage 4: fog of war and node interiors ------------------------------
+
+    /// <summary>
+    /// Reads a <c>fog_rule</c> value by key, with a fallback.
+    /// </summary>
+    /// <remarks>
+    /// The reveal-radius formula and every constant in it live in a table rather
+    /// than in code (knowledge.md rule 3). A designer tuning how far a specialist
+    /// infiltrator can see should be editing <c>fog_rule.csv</c>, and should not
+    /// need a programmer.
+    /// </remarks>
+    public static int Fog(string key, int fallback)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return fallback;
+
+        foreach (FogRule rule in t.TbFogRule.DataList)
+        {
+            if (string.Equals(rule.RuleKey, key, StringComparison.Ordinal))
+                return rule.Value;
+        }
+
+        return fallback;
+    }
+
+    /// <summary>Every <c>fog_rule</c> row, so the validator can prove the keys exist.</summary>
+    public static IReadOnlyList<FogRule> AllFog()
+        => TablesOrNull?.TbFogRule.DataList ?? Array.Empty<FogRule>();
+
+    /// <summary>Reads a <c>node_interior_rule</c> value by key, with a fallback.</summary>
+    public static int NodeInterior(string key, int fallback)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return fallback;
+
+        foreach (NodeInteriorRule rule in t.TbNodeInteriorRule.DataList)
+        {
+            if (string.Equals(rule.RuleKey, key, StringComparison.Ordinal))
+                return rule.Value;
+        }
+
+        return fallback;
+    }
+
+    /// <summary>
+    /// Every <c>node_interior_rule</c> row, so the validator can prove the keys exist.
+    /// </summary>
+    public static IReadOnlyList<NodeInteriorRule> AllNodeInterior()
+        => TablesOrNull?.TbNodeInteriorRule.DataList ?? Array.Empty<NodeInteriorRule>();
+
     // ---- helpers --------------------------------------------------------------
 
     /// <summary>

@@ -93,20 +93,70 @@ internal static class World
         return new GameSession(world);
     }
 
-    /// <summary>Places a finished room immediately, returning it.</summary>
+    /// <summary>
+    /// Places a finished room immediately, returning it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The <c>(x, y, width)</c> triple is a <em>test-side</em> convenience that stands
+    /// in for Presentation's floorplan: it picks slots, a layer, and which rooms the
+    /// new room touches. Core never sees a coordinate (knowledge.md rule 10) — it
+    /// receives the abstract slot indices and the adjacency this helper derives.
+    /// </para>
+    /// <para>
+    /// Keeping the helper grid-shaped is what lets ~115 call sites keep working
+    /// unchanged while Core stays coordinate-free. Adjacency is derived the way a
+    /// floorplan would show it: a room touches the nearest room to its left and right
+    /// on the same layer.
+    /// </para>
+    /// </remarks>
     internal static Room Place(GameSession session, int typeId, int x, int y, int width = 2)
     {
-        Room? room = session.World.BaseLayout.Place(typeId, x, y, width, session.World.Clock.Current);
+        var slots = new List<int>();
+        for (int slot = x; slot < x + width; slot++)
+            slots.Add(slot);
+
+        IReadOnlyList<RoomId> neighbours = NeighboursFor(session, y, x, x + width - 1);
+
+        PlacementError error = session.World.BaseLayout.CheckPlacement(typeId, y, slots, neighbours);
+
+        Room? room = session.World.BaseLayout.Place(
+            typeId, y, slots, session.World.Clock.Current, out PlacementError placeError, neighbours);
+
         if (room is null)
         {
             throw new InvalidOperationException(
-                $"Could not place room {typeId} at {x},{y} width {width}: " +
-                session.World.BaseLayout.CheckPlacement(typeId, x, y, width));
+                $"Could not place room {typeId} at layer {y} slots {string.Join(",", slots)}: "
+                + (placeError != PlacementError.None ? placeError.ToString() : error.ToString()));
         }
 
         // Skip construction so the room is usable on the very next tick.
         room.ConstructionTicksRemaining = 0;
         return room;
+    }
+
+    /// <summary>
+    /// Which rooms a slot span on a layer would sit beside — the floorplan's idea of
+    /// adjacency, standing in for whatever Presentation would compute from real
+    /// positions.
+    /// </summary>
+    private static IReadOnlyList<RoomId> NeighboursFor(GameSession session, int layer, int firstSlot, int lastSlot)
+    {
+        var neighbours = new List<RoomId>();
+
+        foreach (Room room in session.World.BaseLayout.RoomsAtLayer(layer))
+        {
+            if (room.Id == RoomId.None)
+                continue;
+
+            bool touchesLeft = room.LowestSlotIndex == lastSlot + 1;
+            bool touchesRight = room.SlotIndices.Max() == firstSlot - 1;
+
+            if (touchesLeft || touchesRight)
+                neighbours.Add(room.Id);
+        }
+
+        return neighbours;
     }
 
     /// <summary>Hires an agent straight onto the roster with the given traits.</summary>

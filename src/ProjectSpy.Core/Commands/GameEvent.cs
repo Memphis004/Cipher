@@ -138,7 +138,15 @@ public sealed record AgentDied(Tick Tick, AgentId AgentId, int MissionId) : Game
 
 // ---- rooms -----------------------------------------------------------------
 
-public sealed record RoomBuilt(Tick Tick, RoomId RoomId, int TypeId, int GridX, int GridY, int Width, long CostPaid)
+/// <summary>
+/// A room finished being built.
+/// </summary>
+/// <remarks>
+/// Carries the layer and slot count rather than a grid position, because Core has no
+/// coordinates (knowledge.md rule 10). Presentation looks the room up in the layout
+/// when it needs to draw it.
+/// </remarks>
+public sealed record RoomBuilt(Tick Tick, RoomId RoomId, int TypeId, int Layer, int SlotCount, long CostPaid)
     : GameEvent(Tick)
 {
     public override GameEventKind Kind => GameEventKind.RoomBuilt;
@@ -149,7 +157,14 @@ public sealed record RoomDemolished(Tick Tick, RoomId RoomId, int TypeId, int Re
     public override GameEventKind Kind => GameEventKind.RoomDemolished;
 }
 
-public sealed record RoomMerged(Tick Tick, RoomId RoomId, int NewWidth, int NewGridX) : GameEvent(Tick)
+/// <summary>
+/// Two rooms merged into one.
+/// </summary>
+/// <remarks>
+/// Reports the surviving room's layer and slot count rather than a grid position,
+/// because Core has no coordinates (knowledge.md rule 10).
+/// </remarks>
+public sealed record RoomMerged(Tick Tick, RoomId RoomId, int Layer, int SlotCount) : GameEvent(Tick)
 {
     public override GameEventKind Kind => GameEventKind.RoomMerged;
 }

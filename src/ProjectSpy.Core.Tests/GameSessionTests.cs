@@ -29,7 +29,7 @@ public class GameSessionTests
     public void Execute_ValidCommand_AppliesItAndLogsIt()
     {
         var session = new GameSession(UnlockedWorld());
-        var command = new BuildRoomCommand(1, 0, 0, 3, "room.training", 500);
+        var command = GridCommands.Build(1, 0, 0, 3, "room.training", 500, session.World);
 
         CommandResult result = session.Execute(command);
 
@@ -43,14 +43,14 @@ public class GameSessionTests
     public void Execute_RejectedCommand_ChangesNothing()
     {
         var session = new GameSession(UnlockedWorld());
-        session.Execute(new BuildRoomCommand(1, 0, 0, 3, "room.training", 500));
+        session.Execute(GridCommands.Build(1, 0, 0, 3, "room.training", 500, session.World));
         long fundsAfterBuild = session.World.Resources.Funds;
 
         // Overlaps the room just built.
-        CommandResult result = session.Execute(new BuildRoomCommand(2, 2, 0, 3, "room.ops", 100));
+        CommandResult result = session.Execute(GridCommands.Build(2, 2, 0, 3, "room.ops", 100, session.World));
 
         Assert.True(result.IsRejected);
-        Assert.Equal(CommandReason.PlacementOverlaps, result.Reason);
+        Assert.Equal(CommandReason.PlacementSlotOccupied, result.Reason);
         Assert.Single(session.World.BaseLayout.Rooms);
         Assert.Equal(fundsAfterBuild, session.World.Resources.Funds);
         Assert.Single(session.CommandLog); // rejected commands are not logged
@@ -61,7 +61,7 @@ public class GameSessionTests
     {
         var session = new GameSession(UnlockedWorld(funds: 10));
 
-        CommandResult result = session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 500));
+        CommandResult result = session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 500, session.World));
 
         Assert.True(result.IsRejected);
         Assert.Equal(CommandReason.InsufficientFunds, result.Reason);
@@ -77,7 +77,7 @@ public class GameSessionTests
     {
         var session = new GameSession(UnlockedWorld(funds: 200));
 
-        CommandResult result = session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 500));
+        CommandResult result = session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 500, session.World));
 
         Assert.Equal(CommandReason.InsufficientFunds, result.Reason);
         Assert.Equal(500, result.Args.Primary);   // needed
@@ -106,9 +106,14 @@ public class GameSessionTests
     public void CommandResult_MessageKeyIsStable()
     {
         Assert.Equal("command.ok", CommandResult.Ok.MessageKey);
+
+        // The key is derived from the enum member name, so renaming a reason renames
+        // its localization key. `PlacementOutOfBounds` became `PlacementOutOfRange`
+        // when Core lost its coordinates (knowledge.md rule 10); the numeric value was
+        // left at 20 so nothing that persists a reason code broke.
         Assert.Equal(
-            "command.reject.placementoutofbounds",
-            CommandResult.Rejected(CommandReason.PlacementOutOfBounds).MessageKey);
+            "command.reject.placementoutofrange",
+            CommandResult.Rejected(CommandReason.PlacementOutOfRange).MessageKey);
     }
 
     [Fact]
@@ -127,7 +132,7 @@ public class GameSessionTests
 
         using IDisposable _ = session.Subscribe(e => kinds.Add(e.Kind));
 
-        session.Execute(new BuildRoomCommand(1, 0, 0, 3, "room.training", 500));
+        session.Execute(GridCommands.Build(1, 0, 0, 3, "room.training", 500, session.World));
 
         Assert.Contains(GameEventKind.ResourcesChanged, kinds);
     }
@@ -140,7 +145,7 @@ public class GameSessionTests
 
         using IDisposable _ = session.Subscribe(events.Add);
 
-        session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 500));
+        session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 500, session.World));
 
         CommandRejected rejected = Assert.IsType<CommandRejected>(events.Single());
         Assert.Equal(CommandReason.InsufficientFunds, rejected.Reason);
@@ -158,7 +163,7 @@ public class GameSessionTests
                 captured = changed;
         });
 
-        session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 250));
+        session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 250, session.World));
 
         Assert.NotNull(captured);
         Assert.Equal(-250, captured!.FundsDelta);
@@ -323,7 +328,7 @@ public class GameSessionTests
         // unimplemented phase is loud, assert that a fully-implemented one actually runs.
         var session = new GameSession(Seed);
         session.World.BaseLayout.UnlockedRoomTypeIds.Add(1);
-        session.Execute(new BuildRoomCommand(1, 0, 0, 3, "room.training", 100));
+        session.Execute(GridCommands.Build(1, 0, 0, 3, "room.training", 100, session.World));
         session.World.AddAgent(new Agent { Name = "Nok", ClassId = 1001 });
 
         session.AdvanceTicks(Tick.TicksPerDay);
@@ -370,8 +375,8 @@ public class GameSessionTests
         {
             var session = new GameSession(Seed);
             session.World.BaseLayout.UnlockedRoomTypeIds.Add(1);
-            session.Execute(new BuildRoomCommand(1, 0, 0, 4, "room.training", 300));
-            session.Execute(new BuildRoomCommand(1, 5, 0, 4, "room.training", 300));
+            session.Execute(GridCommands.Build(1, 0, 0, 4, "room.training", 300, session.World));
+            session.Execute(GridCommands.Build(1, 5, 0, 4, "room.training", 300, session.World));
             session.AdvanceTicks(200);
             return session.World.ComputeStateHash();
         }
@@ -426,7 +431,7 @@ public class GameSessionTests
     {
         var world = UnlockedWorld();
         var session = new GameSession(world);
-        session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 100));
+        session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 100, session.World));
 
         Room room = session.World.BaseLayout.Rooms[0];
         Agent a = session.World.AddAgent(new Agent { Name = "A" });
@@ -444,7 +449,7 @@ public class GameSessionTests
     {
         var world = UnlockedWorld();
         var session = new GameSession(world);
-        session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 100));
+        session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 100, session.World));
 
         Room room = session.World.BaseLayout.Rooms[0];
         Agent agent = session.World.AddAgent(new Agent { Name = "Mali" });
@@ -464,7 +469,7 @@ public class GameSessionTests
     {
         var world = UnlockedWorld();
         var session = new GameSession(world);
-        session.Execute(new BuildRoomCommand(1, 0, 0, 2, "room.training", 100));
+        session.Execute(GridCommands.Build(1, 0, 0, 2, "room.training", 100, session.World));
         Room room = session.World.BaseLayout.Rooms[0];
 
         Agent agent = session.World.AddAgent(new Agent { Name = "Ghost", Status = AgentStatus.Dead });
@@ -490,8 +495,8 @@ public class GameSessionTests
     {
         var world = UnlockedWorld();
         var session = new GameSession(world);
-        session.Execute(new BuildRoomCommand(1, 0, 0, 3, "room.training", 100));
-        session.Execute(new BuildRoomCommand(2, 4, 0, 3, "room.ops", 100));
+        session.Execute(GridCommands.Build(1, 0, 0, 3, "room.training", 100, session.World));
+        session.Execute(GridCommands.Build(2, 4, 0, 3, "room.ops", 100, session.World));
         session.AdvanceTicks(200);
 
         Assert.True(session.ValidateWorld(out string problem), problem);

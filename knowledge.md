@@ -85,3 +85,49 @@ stop and ask before writing code.
   editing. Do not refactor code outside the task's blast radius.
 - Report findings plainly. The Stage 6 design review and the Stage 10 review
   both ask for bluntness over comfort.
+
+## 10. Core is presentation-agnostic
+
+- **Core never stores world-space coordinates, meshes, or camera data.** No
+  positions, sizes, rotations, transforms, renderers, colliders or viewport
+  concepts anywhere in Core — including in types that exist to *support*
+  rendering. This extends to the base layout: a room is identified by a slot
+  index and a layer, never by a grid cell.
+- A mission node's interior is described abstractly as `RoomContents`: a list
+  of interactables (container, door, terminal, guard, trap, exit), each with a
+  stable id, a type, a state, and an abstract slot index.
+- **The presentation layer decides how slots map to 2D, 2.5D or 3D
+  positions.** Core defines which slot an object occupies and nothing about
+  where that is on screen.
+- Walking inside a room is presentation only. **Every rule-affecting action is
+  an `ICommand` with a tick cost.** If Core stored a position for an agent, the
+  player could move without issuing a command, and the move would not be in the
+  command log — which breaks rule 6, because a replay would not reproduce it.
+- Spatial questions that *are* rules (which rooms are adjacent, which layer a
+  room is in, what an interactable's state is) are stored as abstract data in
+  Core. Adjacency is explicit data, not derived from coordinates.
+
+### Why
+
+Three reasons, in order of weight:
+
+1. **Determinism.** A position mutated by anything other than a command is not
+   replayable. Core would hold state that no log describes.
+2. **One simulation, many presentations.** The same assembly has to run the
+   headless simulator (rule 1) and Unity. Coordinate-free Core is what makes
+   that the same code rather than two implementations.
+3. **It is testable.** A rule that reads "the terminal in slot 3 is locked"
+   can be asserted directly. A rule that reads "the terminal at x=4.2, y=-1.7
+   is locked" needs a spatial setup to say anything at all.
+
+### Enforcement
+
+`CorePurityTests` rejects coordinate- and render-shaped types on Core's public
+surface, and the type-naming conventions below are part of the contract:
+
+| Concept | Core name | Never |
+|---|---|---|
+| Where something sits | `SlotIndex`, `Layer` | `x`, `y`, `z`, `position`, `transform` |
+| How big it is | `SlotCount`, `Tier` | `width`, `height`, `scale`, `bounds` |
+| How it looks | `TypeId`, `NameKey` | `mesh`, `sprite`, `prefab`, `material` |
+| Who can see it | `Revealed` | `visible`, `rendered`, `occluded` |

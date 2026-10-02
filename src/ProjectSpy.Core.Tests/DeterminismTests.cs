@@ -319,7 +319,7 @@ public class DeterminismTests
 
         foreach ((int typeId, int x, int y, string key) in ScriptedRooms)
         {
-            CommandResult result = session.Execute(new BuildRoomCommand(typeId, x, y, 3, key, 0));
+            CommandResult result = session.Execute(GridCommands.Build(typeId, x, y, 3, key, 0, session.World));
             Assert.True(result.IsOk, $"could not build {key}: {result.Reason}");
         }
 
