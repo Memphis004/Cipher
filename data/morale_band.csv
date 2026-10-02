@@ -1,0 +1,6 @@
+##var,id,band,name_key,loyalty_floor,loyalty_ceiling,miss_chance_percent
+##type,int,int,string,int,int,int
+,10051,1,morale.band.devoted,75,100,2
+,10052,2,morale.band.content,50,74,6
+,10053,3,morale.band.uneasy,25,49,14
+,10054,4,morale.band.resentful,0,24,28

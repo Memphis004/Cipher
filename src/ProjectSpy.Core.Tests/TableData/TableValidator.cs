@@ -36,6 +36,12 @@ namespace ProjectSpy.Core.Tests.TableData;
 /// </remarks>
 internal sealed class TableValidator
 {
+    /// <summary>
+    /// The reputation tiers <c>recruit_rule</c> is keyed by. A field so the checks
+    /// read as "for each tier" instead of repeating the bounds.
+    /// </summary>
+    private static readonly int[] ReputationTiers = { 0, 1, 2 };
+
     private readonly GameTables _tables;
     private readonly LocalizationCatalog _th;
     private readonly LocalizationCatalog _en;
@@ -93,15 +99,506 @@ internal sealed class TableValidator
         ValidateNodeRoomCoveragePerTier(errors);
         ValidateIdSpacesAreNonOverlapping(errors);
         ValidateNumericRanges(errors);
+        ValidateStageThreeTables(errors);
 
         return errors;
+    }
+
+    // ---- stage 3 -------------------------------------------------------------
+
+    /// <summary>
+    /// Checks the stage-3 tables. Kept together because they share one idea: every
+    /// value the simulation reads at runtime must be reachable and sane, or a rule
+    /// silently does the wrong thing instead of failing loudly.
+    /// </summary>
+    /// <summary>
+    /// Reads an economy_rule value by key, falling back to the same default Core uses.
+    /// </summary>
+    /// <remarks>
+    /// The fallback mirrors <c>SimulationRules.Economy</c> so the validator reasons
+    /// about the ladder using the numbers Core would actually use, rather than
+    /// disagreeing with it about what a missing key means.
+    /// </remarks>
+    private int SimulationFallback(string key)
+    {
+        foreach (EconomyRule rule in _tables.TbEconomyRule.DataList)
+        {
+            if (rule.RuleKey == key)
+                return rule.Value;
+        }
+
+        return key switch
+        {
+            "settlement_day_of_week" => 6,
+            "bankruptcy_grace_days" => 7,
+            "bankruptcy_stage_loyalty_drain" => 2,
+            "bankruptcy_stage_resign_day" => 3,
+            "bankruptcy_stage_three_day" => 6,
+            "bankruptcy_stage_four_day" => 10,
+            "bankruptcy_max_stage" => 4,
+            "upkeep_multiplier_percent" => 100,
+            "loan_interest_compounds" => 1,
+            _ => 0,
+        };
+    }
+
+    private void ValidateStageThreeTables(List<string> errors)
+    {
+        var roomIds = new HashSet<int>();
+        foreach (RoomType room in _tables.TbRoomType.DataList)
+            roomIds.Add(room.Id);
+
+        // Every stage-3 table row must point at a room type that exists. A recovery or
+        // training rule about a room that is not in room_type is dead data.
+        foreach (RecoveryRule rule in _tables.TbRecoveryRule.DataList)
+        {
+            if (!roomIds.Contains(rule.RoomTypeId))
+            {
+                errors.Add(
+                    $"recovery_rule {rule.Id}: references unknown room_type {rule.RoomTypeId}");
+            }
+
+            if (rule.RestorePhysicalPercentPerTick < 0 || rule.RestoreMentalPercentPerTick < 0)
+            {
+                errors.Add($"recovery_rule {rule.Id}: restore percentages must be >= 0");
+            }
+
+            if (rule.MentalRatioPercent is < 0 or > 100)
+            {
+                errors.Add(
+                    $"recovery_rule {rule.Id}: mental_ratio_percent must be 0..100, " +
+                    $"was {rule.MentalRatioPercent}");
+            }
+
+            // A recovery row that restores nothing and heals nothing is unreachable
+            // data; a designer would reasonably assume the room does something.
+            if (rule.RestorePhysicalPercentPerTick == 0
+                && rule.RestoreMentalPercentPerTick == 0
+                && rule.InjuryHealPercentPerTick == 0
+                && rule.BurnoutReliefPercentPerTick == 0)
+            {
+                errors.Add(
+                    $"recovery_rule {rule.Id}: has no effect at all, so the room is unreachable");
+            }
+        }
+
+        foreach (TrainingRule rule in _tables.TbTrainingRule.DataList)
+        {
+            if (!roomIds.Contains(rule.RoomTypeId))
+                errors.Add($"training_rule {rule.Id}: references unknown room_type {rule.RoomTypeId}");
+
+            if (rule.StaminaCostPhysical < 0 || rule.StaminaCostMental < 0)
+                errors.Add($"training_rule {rule.Id}: stamina costs must be >= 0");
+
+            // A training room that costs no stamina makes overworking impossible, which
+            // silently removes the entire "overworking is a mistake" design.
+            if (rule.StaminaCostPhysical == 0 && rule.StaminaCostMental == 0)
+                errors.Add($"training_rule {rule.Id}: must consume stamina, or overworking cannot happen");
+
+            if (rule.OverworkThreshold is < 0 or > 100)
+                errors.Add($"training_rule {rule.Id}: overwork_threshold must be 0..100");
+
+            if (rule.OverworkGainPercent is < 0 or > 100)
+            {
+                errors.Add(
+                    $"training_rule {rule.Id}: overwork_gain_percent must be 0..100, " +
+                    $"was {rule.OverworkGainPercent}");
+            }
+        }
+
+        foreach (SkillCap cap in _tables.TbSkillCap.DataList)
+        {
+            if (cap.SoftCap < 0)
+                errors.Add($"skill_cap {cap.Id}: soft_cap must be >= 0");
+
+            if (cap.HardCap <= cap.SoftCap)
+            {
+                errors.Add(
+                    $"skill_cap {cap.Id}: hard_cap ({cap.HardCap}) must exceed soft_cap ({cap.SoftCap}); " +
+                    "otherwise the diminishing-returns ramp has no width");
+            }
+
+            if (cap.FloorPercent is < 0 or > 100)
+                errors.Add($"skill_cap {cap.Id}: floor_percent must be 0..100");
+        }
+
+        // All five skills need a cap row. A missing one leaves that skill uncapped,
+        // which would let one agent grow indefinitely while others taper off.
+        foreach (TableSkillKind skill in Enum.GetValues<TableSkillKind>())
+        {
+            if (skill == TableSkillKind.None)
+                continue;
+
+            bool hasCap = _tables.TbSkillCap.DataList.Any(c => c.SkillKind == skill);
+            if (!hasCap)
+                errors.Add($"skill_cap: no row for skill {skill}, so it can never be capped");
+        }
+
+        // morale_band must tile 0..100 exactly. A gap would make some loyalty values
+        // fall through to Resentful and make the UI lie.
+        var bandFloors = new List<int>();
+        foreach (MoraleBand band in _tables.TbMoraleBand.DataList)
+        {
+            bandFloors.Add(band.LoyaltyFloor);
+
+            if (band.LoyaltyFloor > band.LoyaltyCeiling)
+                errors.Add($"morale_band {band.Id}: loyalty_floor exceeds loyalty_ceiling");
+
+            if (band.MissChancePercent is < 0 or > 100)
+                errors.Add($"morale_band {band.Id}: miss_chance_percent must be 0..100");
+        }
+
+        bandFloors.Sort();
+        if (bandFloors.Count > 0 && bandFloors[0] != 0)
+        {
+            errors.Add(
+                $"morale_band: lowest floor is {bandFloors[0]}, must be 0 so every loyalty value has a band");
+        }
+
+        foreach (MoraleBand band in _tables.TbMoraleBand.DataList)
+        {
+            // The next band up must start exactly where this one ends. Comparing against
+            // the floor rather than the ceiling would let a band end at 74 and the next
+            // begin at 60, silently re-labelling the overlap.
+            bool continues = bandFloors.Any(f => f == band.LoyaltyCeiling + 1);
+
+            if (!continues && band.LoyaltyCeiling < 100)
+            {
+                errors.Add(
+                    $"morale_band {band.Id}: loyalty range {band.LoyaltyFloor}-{band.LoyaltyCeiling} " +
+                    "is not followed by a band starting at " + (band.LoyaltyCeiling + 1));
+            }
+        }
+
+        // loyalty_drift.condition must be a name Core knows about. Core maps the enum to
+        // a string; a typo would return 0 and the penalty would silently vanish.
+        var knownConditions = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Overworked", "Working", "Idle", "MissionLoss", "MissionSuccess",
+            "BadRoommate", "PoorFacility", "GoodFacility", "PayFair", "PayUnfair", "Burnout",
+        };
+
+        var seenConditions = new HashSet<string>(StringComparer.Ordinal);
+        foreach (LoyaltyDrift drift in _tables.TbLoyaltyDrift.DataList)
+        {
+            if (!knownConditions.Contains(drift.Condition))
+            {
+                errors.Add(
+                    $"loyalty_drift {drift.Id}: condition '{drift.Condition}' is not a condition Core knows");
+            }
+
+            if (!seenConditions.Add(drift.Condition))
+                errors.Add($"loyalty_drift: condition '{drift.Condition}' is defined more than once");
+
+            if (drift.Delta == 0)
+                errors.Add($"loyalty_drift {drift.Id}: delta is 0, so this source can never affect anything");
+        }
+
+        foreach (LoyaltyThreshold threshold in _tables.TbLoyaltyThreshold.DataList)
+        {
+            if (threshold.Threshold is < 0 or > 100)
+                errors.Add($"loyalty_threshold {threshold.Id}: threshold must be 0..100");
+
+            if (threshold.ChancePercent is < 0 or > 100)
+                errors.Add($"loyalty_threshold {threshold.Id}: chance_percent must be 0..100");
+
+            if (threshold.CooldownDays < 0)
+                errors.Add($"loyalty_threshold {threshold.Id}: cooldown_days must be >= 0");
+        }
+
+        foreach (LoanTier tier in _tables.TbLoanTier.DataList)
+        {
+            if (tier.Amount <= 0)
+                errors.Add($"loan_tier {tier.Id}: amount must be > 0");
+
+            if (tier.WeeklyInterestPercent < 0)
+                errors.Add($"loan_tier {tier.Id}: weekly_interest_percent must be >= 0");
+
+            if (tier.MaxActive < 1)
+                errors.Add($"loan_tier {tier.Id}: max_active must be >= 1");
+        }
+
+        foreach (RecruitRule rule in _tables.TbRecruitRule.DataList)
+        {
+            if (rule.HrLevel < 1)
+                errors.Add($"recruit_rule {rule.Id}: hr_level must be >= 1");
+
+            if (rule.ReputationTier is < 0 or > 2)
+                errors.Add($"recruit_rule {rule.Id}: reputation_tier must be 0..2");
+
+            if (rule.PoolSize < 1)
+                errors.Add($"recruit_rule {rule.Id}: pool_size must be >= 1");
+
+            if (rule.SkillVariance < 0)
+                errors.Add($"recruit_rule {rule.Id}: skill_variance must be >= 0");
+
+            if (rule.TraitCountMin < 1)
+                errors.Add($"recruit_rule {rule.Id}: trait_count_min must be >= 1");
+
+            if (rule.TraitCountMax < rule.TraitCountMin)
+                errors.Add($"recruit_rule {rule.Id}: trait_count_max is below trait_count_min");
+
+            if (rule.HiddenTraitChance is < 0 or > 100)
+                errors.Add($"recruit_rule {rule.Id}: hidden_trait_chance must be 0..100");
+        }
+
+        // Every (hr_level, reputation_tier) pair Core can ask about must resolve to a
+        // row. The lookup degrades to a lower HR level on purpose, but only within the
+        // same tier — a tier with no rows at all would stop recruiting entirely.
+        foreach (int repTier in ReputationTiers)
+        {
+            bool any = _tables.TbRecruitRule.DataList.Any(r => r.ReputationTier == repTier);
+            if (!any)
+                errors.Add($"recruit_rule: no rows for reputation tier {repTier}, so recruiting stops at that tier");
+        }
+
+        // Keyed rule tables must not be missing a key Core reads. A missing key falls
+        // back to a hard-coded default in SimulationRules, which is precisely the
+        // silent-wrong-answer failure the facade exists to prevent.
+        var requiredEconomyKeys = new[]
+        {"settlement_day_of_week", "bankruptcy_grace_days", "bankruptcy_stage_loyalty_drain",
+      "bankruptcy_stage_resign_day", "bankruptcy_stage_three_day", "bankruptcy_stage_four_day",
+      "bankruptcy_forced_resign_count",
+            "bankruptcy_forced_resign_loyalty_floor", "bankruptcy_forced_resign_chance",
+            "bankruptcy_penalty_scale_percent", "bankruptcy_max_stage", "upkeep_multiplier_percent",
+            "loan_interest_compounds",
+        };
+
+        foreach (string key in requiredEconomyKeys)
+        {
+            bool found = _tables.TbEconomyRule.DataList.Any(r => r.RuleKey == key);
+            if (!found)
+                errors.Add($"economy_rule: missing required key '{key}'");
+        }
+
+        var requiredBurnoutKeys = new[]
+        {
+            "burnout_mental_threshold", "burnout_daily_loyalty_drain",
+            "burnout_resting_loyalty_drain",
+            "burnout_recovery_mental_percent", "burnout_recovery_physical_percent",
+            "burnout_exit_mental",
+        };
+
+        foreach (string key in requiredBurnoutKeys)
+        {
+            bool found = _tables.TbBurnoutRule.DataList.Any(r => r.RuleKey == key);
+            if (!found)
+                errors.Add($"burnout_rule: missing required key '{key}'");
+        }
+
+        var requiredIntelKeys = new[]
+        {
+            "investigation_ticks_per_step", "investigation_evidence_chance",
+            "investigation_false_lead_chance", "mole_weekly_heat", "mole_leak_difficulty_bonus",
+            "mole_leak_chance_percent", "wrong_accusation_loyalty_drain",
+            "counter_intel_capacity_per_level",
+            "investigation_evidence_gain", "investigation_false_lead_penalty",
+            "investigation_max_steps", "expose_threshold",
+        };
+
+        foreach (string key in requiredIntelKeys)
+        {
+            bool found = _tables.TbCounterIntelRule.DataList.Any(r => r.RuleKey == key);
+            if (!found)
+                errors.Add($"counter_intel_rule: missing required key '{key}'");
+        }
+
+        ValidateCounterIntelBalance(errors);
+    }
+
+    /// <summary>
+    /// Asserts that an investigation can actually conclude.
+    /// </summary>
+    /// <remarks>
+    /// A case that gains <c>gain</c> evidence per good step, loses <c>penalty</c> per
+    /// false lead, runs for <c>maxSteps</c> steps and must clear <c>threshold</c> to
+    /// expose the mole is a system that silently does nothing if a designer raises the
+    /// threshold or lowers the gain — the desk simply never produces a verdict and the
+    /// mole becomes uncatchable. Nothing errors at runtime; the feature just quietly
+    /// stops existing. So the relationship is checked here instead.
+    /// </remarks>
+    private void ValidateCounterIntelBalance(List<string> errors)
+    {
+        int Value(string key, int fallback)
+            => _tables.TbCounterIntelRule.DataList.FirstOrDefault(r => r.RuleKey == key)?.Value ?? fallback;
+
+        int gain = Value("investigation_evidence_gain", -1);
+        int penalty = Value("investigation_false_lead_penalty", -1);
+        int maxSteps = Value("investigation_max_steps", -1);
+        int threshold = Value("expose_threshold", -1);
+
+        if (gain < 0 || penalty < 0 || maxSteps <= 0 || threshold <= 0)
+            return; // keys already reported as missing above
+
+        if (gain <= 0)
+        {
+            errors.Add(
+                "counter_intel_rule: investigation_evidence_gain must be positive or no case can ever conclude");
+        }
+
+        // The ceiling of the evidence scale is 100; the gain has to be able to reach it.
+        if (gain > 100)
+            errors.Add($"counter_intel_rule: investigation_evidence_gain {gain} exceeds the 0-100 evidence scale");
+
+        // Best case: every step is a success.
+        int bestCase = maxSteps * gain;
+        if (bestCase <= threshold)
+        {
+            errors.Add(
+                $"counter_intel_rule: a case cannot expose a mole — {maxSteps} steps at {gain} evidence "
+                + $"reaches {bestCase}, below the expose threshold of {threshold}");
+        }
+
+        // Realistic case: the expected outcome of the configured branch probabilities.
+        //
+        // This one is deliberately expected to fall SHORT of the threshold. Evidence
+        // accrues identically whoever you investigate, so if the average case cleared
+        // the threshold the desk would expose agents at random and the player's own
+        // work — correlating Heat spikes against the mission log — would be worth
+        // nothing. The desk is a machine for converting a suspicion you already hold
+        // into proof, and only good rolls on top of that will do it.
+        int evidenceChance = Value("investigation_evidence_chance", 0);
+        int falseLeadChance = Value("investigation_false_lead_chance", 0);
+        int expectedPerStep = evidenceChance * gain / 100 - falseLeadChance * penalty / 100;
+
+        if (expectedPerStep <= 0)
+        {
+            errors.Add(
+                "counter_intel_rule: false leads cancel out evidence on average "
+                + $"({evidenceChance}% x {gain} vs {falseLeadChance}% x {penalty}) — "
+                + "investigations can only ever get worse, so a conclusive case is a "
+                + "matter of luck rather than of narrowing the suspect list down");
+        }
+        else if (maxSteps * expectedPerStep >= threshold)
+        {
+            errors.Add(
+                $"counter_intel_rule: the average investigation reaches "
+                + $"{maxSteps * expectedPerStep}, at or above the expose threshold of {threshold} — "
+                + "the desk would expose people at random and correlating Heat against "
+                + "the mission log would be pointless");
+        }
+
+        // The settlement day must be a real day of the week.
+        foreach (EconomyRule rule in _tables.TbEconomyRule.DataList)
+        {
+            if (rule.RuleKey == "settlement_day_of_week" && rule.Value is < 0 or > 6)
+            {
+                errors.Add(
+                    $"economy_rule: settlement_day_of_week must be 0..6, was {rule.Value}");
+            }
+
+            if (rule.RuleKey == "bankruptcy_max_stage" && rule.Value < 1)
+            {
+                errors.Add(
+                    "economy_rule: bankruptcy_max_stage must be >= 1, " +
+                    "or the run can end before the grace period is even spent");
+            }
+
+
+        // The ladder's stage thresholds must ascend, or a later stage would never be
+        // reachable and the designer would believe in a penalty that never fires.
+        int stage2 = SimulationFallback("bankruptcy_stage_resign_day");
+        int stage3 = SimulationFallback("bankruptcy_stage_three_day");
+        int stage4 = SimulationFallback("bankruptcy_stage_four_day");
+
+        if (!(stage2 < stage3 && stage3 < stage4))
+        {
+            errors.Add(
+                $"economy_rule: bankruptcy stage thresholds must ascend, got {stage2}, {stage3}, {stage4}");
+        }
+
+        // "Never instantly lose": the grace period has to be a real period.
+        if (SimulationFallback("bankruptcy_grace_days") < 1)
+        {
+            errors.Add("economy_rule: bankruptcy_grace_days must be >= 1");
+        }
+    }
+
+        // The counter-intel room lookup in MoleSystem is derived from category, effect
+        // and cost. If no room matches, investigations can never run.
+        bool hasCounterIntel = _tables.TbRoomType.DataList.Any(
+            r => r.Category == RoomCategory.Admin
+                 && r.EffectType == EffectType.HeatReduction
+                 && r.BuildCost > 2500);
+
+        if (!hasCounterIntel)
+            errors.Add("room_type: no Admin/HeatReduction room above 2500 cost, so counter-intel can never be identified");// The designed relationship: mental is a scarcer resource than physical. Enforced
+        // as a band rather than an exact ratio because the per-room numbers are integers
+        // and rounding would otherwise fail a correct table.
+        long physicalTotal = 0;
+        long mentalTotal = 0;
+        foreach (RecoveryRule rule in _tables.TbRecoveryRule.DataList)
+        {
+            physicalTotal += rule.RestorePhysicalPercentPerTick;
+            mentalTotal += rule.RestoreMentalPercentPerTick;
+        }
+
+        if (physicalTotal > 0)
+        {
+            // "Roughly a third" — wide enough to survive integer rounding and a designer
+            // nudging a room, narrow enough to catch the ratio being quietly inverted.
+            if (mentalTotal * 100L < physicalTotal * 20L || mentalTotal * 100L > physicalTotal * 60L)
+            {
+                errors.Add(
+                    $"recovery_rule: total mental restore ({mentalTotal}) should be roughly a third " +
+                    $"of total physical restore ({physicalTotal}); the designed ratio is " +
+                    $"mental_ratio_percent");
+            }
+        }
+
+        // A room that serves both pools must never restore mental faster than physical: that
+        // would invert the scarcity the rest economy depends on. Specialist rooms are
+        // exempt — the therapy office restoring almost no physical stamina is the whole
+        // point of it being a specialist.
+        foreach (RecoveryRule rule in _tables.TbRecoveryRule.DataList)
+        {
+            bool servesBoth = rule.RestorePhysicalPercentPerTick > 0
+                              && rule.RestoreMentalPercentPerTick > 0;
+
+            if (servesBoth && rule.RestoreMentalPercentPerTick > rule.RestorePhysicalPercentPerTick)
+            {
+                errors.Add(
+                    $"recovery_rule {rule.Id}: a room that serves both pools restores mental faster " +
+                    "than physical, which inverts the intended scarcity of mental stamina");
+            }
+        }
+
+        // At least one room must be able to relieve burnout, or burnout is permanent —
+        // which contradicts the design requirement that it be recoverable.
+        bool anyBurnoutRelief = _tables.TbRecoveryRule.DataList.Any(r => r.BurnoutReliefPercentPerTick > 0);
+        if (!anyBurnoutRelief)
+        {
+            errors.Add(
+                "recovery_rule: no room provides burnout_relief_percent_per_tick, " +
+                "which would make burnout permanent");
+        }
+
+        // The mental ratio must be a sane percentage, and it is the documented source
+        // of the "mental is slower" design.
+        foreach (RecoveryRule rule in _tables.TbRecoveryRule.DataList)
+        {
+            if (rule.MentalRatioPercent is < 10 or > 90)
+            {
+                errors.Add(
+                    $"recovery_rule {rule.Id}: mental_ratio_percent ({rule.MentalRatioPercent}) " +
+                    "is outside the plausible 10..90 band");
+            }
+        }
+
+        // There must be a mole trait for the heat system to act on.
+        bool hasMole = _tables.TbTrait.DataList.Any(t => t.EffectType == "HeatGain");
+        if (!hasMole)
+        {
+            errors.Add(
+                "trait: no trait with effect_type HeatGain exists, so the mole adds no Heat");
+        }
     }
 
     // ---- foreign keys --------------------------------------------------------
 
     private void ValidateNoDanglingForeignKeys(List<string> errors)
     {
-        var roomIds = new HashSet<int>();
+          var roomIds = new HashSet<int>();
         foreach (RoomType room in _tables.TbRoomType.DataList)
             roomIds.Add(room.Id);
 
@@ -432,6 +929,17 @@ internal sealed class TableValidator
             ("gadget", _tables.TbGadget.DataList.Select(x => x.Id)),
             ("item", _tables.TbItem.DataList.Select(x => x.Id)),
             ("contract_offer", _tables.TbContractOffer.DataList.Select(x => x.Id)),
+            ("skill_cap", _tables.TbSkillCap.DataList.Select(x => x.Id)),
+            ("recovery_rule", _tables.TbRecoveryRule.DataList.Select(x => x.Id)),
+            ("training_rule", _tables.TbTrainingRule.DataList.Select(x => x.Id)),
+            ("economy_rule", _tables.TbEconomyRule.DataList.Select(x => x.Id)),
+            ("loan_tier", _tables.TbLoanTier.DataList.Select(x => x.Id)),
+            ("morale_band", _tables.TbMoraleBand.DataList.Select(x => x.Id)),
+            ("loyalty_drift", _tables.TbLoyaltyDrift.DataList.Select(x => x.Id)),
+            ("loyalty_threshold", _tables.TbLoyaltyThreshold.DataList.Select(x => x.Id)),
+            ("recruit_rule", _tables.TbRecruitRule.DataList.Select(x => x.Id)),
+            ("counter_intel_rule", _tables.TbCounterIntelRule.DataList.Select(x => x.Id)),
+            ("burnout_rule", _tables.TbBurnoutRule.DataList.Select(x => x.Id)),
         };
 
         var seen = new Dictionary<int, string>();

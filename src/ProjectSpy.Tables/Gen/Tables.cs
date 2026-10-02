@@ -28,6 +28,17 @@ public partial class Tables
     public TbLootTable TbLootTable {get; }
     public TbHeatTier TbHeatTier {get; }
     public TbContractOffer TbContractOffer {get; }
+    public TbSkillCap TbSkillCap {get; }
+    public TbRecoveryRule TbRecoveryRule {get; }
+    public TbTrainingRule TbTrainingRule {get; }
+    public TbEconomyRule TbEconomyRule {get; }
+    public TbLoanTier TbLoanTier {get; }
+    public TbMoraleBand TbMoraleBand {get; }
+    public TbLoyaltyDrift TbLoyaltyDrift {get; }
+    public TbLoyaltyThreshold TbLoyaltyThreshold {get; }
+    public TbRecruitRule TbRecruitRule {get; }
+    public TbCounterIntelRule TbCounterIntelRule {get; }
+    public TbBurnoutRule TbBurnoutRule {get; }
 
     public Tables(System.Func<string, ByteBuf> loader)
     {
@@ -46,6 +57,17 @@ public partial class Tables
         TbLootTable = new TbLootTable(loader("tbloottable"));
         TbHeatTier = new TbHeatTier(loader("tbheattier"));
         TbContractOffer = new TbContractOffer(loader("tbcontractoffer"));
+        TbSkillCap = new TbSkillCap(loader("tbskillcap"));
+        TbRecoveryRule = new TbRecoveryRule(loader("tbrecoveryrule"));
+        TbTrainingRule = new TbTrainingRule(loader("tbtrainingrule"));
+        TbEconomyRule = new TbEconomyRule(loader("tbeconomyrule"));
+        TbLoanTier = new TbLoanTier(loader("tbloantier"));
+        TbMoraleBand = new TbMoraleBand(loader("tbmoraleband"));
+        TbLoyaltyDrift = new TbLoyaltyDrift(loader("tbloyaltydrift"));
+        TbLoyaltyThreshold = new TbLoyaltyThreshold(loader("tbloyaltythreshold"));
+        TbRecruitRule = new TbRecruitRule(loader("tbrecruitrule"));
+        TbCounterIntelRule = new TbCounterIntelRule(loader("tbcounterintelrule"));
+        TbBurnoutRule = new TbBurnoutRule(loader("tbburnoutrule"));
         ResolveRef();
     }
     
@@ -66,6 +88,17 @@ public partial class Tables
         TbLootTable.ResolveRef(this);
         TbHeatTier.ResolveRef(this);
         TbContractOffer.ResolveRef(this);
+        TbSkillCap.ResolveRef(this);
+        TbRecoveryRule.ResolveRef(this);
+        TbTrainingRule.ResolveRef(this);
+        TbEconomyRule.ResolveRef(this);
+        TbLoanTier.ResolveRef(this);
+        TbMoraleBand.ResolveRef(this);
+        TbLoyaltyDrift.ResolveRef(this);
+        TbLoyaltyThreshold.ResolveRef(this);
+        TbRecruitRule.ResolveRef(this);
+        TbCounterIntelRule.ResolveRef(this);
+        TbBurnoutRule.ResolveRef(this);
     }
 }
 

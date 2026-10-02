@@ -46,6 +46,29 @@ public enum GameEventKind
     ContractAccepted = 20,
     CommandRejected = 21,
     FlagChanged = 22,
+
+    // Stage 3. Values are appended; existing values are never renumbered because the
+    // integer is written into save and replay files.
+    AgentOverworked = 23,
+    AgentBurnoutEntered = 24,
+    AgentBurnoutRecovered = 25,
+    AgentHealed = 26,
+    LoyaltyEscalated = 27,
+    AgentResigned = 28,
+    AgentDefected = 29,
+    RecruitPoolRefreshed = 30,
+    CandidateGenerated = 31,
+    LoanTaken = 32,
+    BankruptcyStageChanged = 33,
+    EconomyCollapsed = 34,
+    InvestigationStarted = 35,
+    InvestigationProgressed = 36,
+    InvestigationConcluded = 37,
+    AgentAccused = 38,
+    AgentExposedAsMole = 39,
+    AgentCleared = 40,
+    MissionCompromised = 41,
+    ContractOfferRefreshed = 42,
 }
 
 // ---- time ------------------------------------------------------------------
@@ -204,4 +227,149 @@ public sealed record CommandRejected(Tick Tick, CommandReason Reason, CommandArg
 public sealed record FlagChanged(Tick Tick, string FlagName, bool NewValue) : GameEvent(Tick)
 {
     public override GameEventKind Kind => GameEventKind.FlagChanged;
+}
+
+// ---- stage 3: training, recovery and morale ---------------------------------
+
+/// <summary>
+/// An agent trained below the stamina threshold. The event exists so the player sees
+/// the cost of overworking rather than inferring it from a loyalty band.
+/// </summary>
+public sealed record AgentOverworked(Tick Tick, AgentId AgentId, int PhysicalStamina, int MentalStamina)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentOverworked;
+}
+
+/// <summary>Mental hit zero and the agent burnt out.</summary>
+public sealed record AgentBurnoutEntered(Tick Tick, AgentId AgentId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentBurnoutEntered;
+}
+
+/// <summary>Burnout lifted after enough dedicated rest.</summary>
+public sealed record AgentBurnoutRecovered(Tick Tick, AgentId AgentId, int TicksOfRest) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentBurnoutRecovered;
+}
+
+/// <summary>An injury cleared in the infirmary.</summary>
+public sealed record AgentHealed(Tick Tick, AgentId AgentId, int RemainingSeverity) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentHealed;
+}
+
+/// <summary>
+/// An agent's loyalty crossed a threshold and produced an incident.
+/// </summary>
+/// <remarks>
+/// Carries the enum and the coarse band, never a sentence and never the raw loyalty
+/// number. The band is what the UI is allowed to display (knowledge.md rule 4).
+/// </remarks>
+public sealed record LoyaltyEscalated(Tick Tick, AgentId AgentId, LoyaltyEscalation Escalation, LoyaltyBand Band)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.LoyaltyEscalated;
+}
+
+/// <summary>An agent left of their own accord.</summary>
+public sealed record AgentResigned(Tick Tick, AgentId AgentId, LoyaltyEscalation Cause) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentResigned;
+}
+
+/// <summary>An agent defected to a rival, taking what they knew with them.</summary>
+public sealed record AgentDefected(Tick Tick, AgentId AgentId, int IntelLost) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentDefected;
+}
+
+// ---- stage 3: recruitment ---------------------------------------------------
+
+/// <summary>The candidate pool was regenerated.</summary>
+public sealed record RecruitPoolRefreshed(Tick Tick, int PoolSize, int HrLevel, int ReputationTier)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.RecruitPoolRefreshed;
+}
+
+/// <summary>A new candidate appeared. Hidden traits exist but are not disclosed here.</summary>
+public sealed record CandidateGenerated(Tick Tick, AgentId RecruitId, int ClassId, int SalaryPerWeek)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.CandidateGenerated;
+}
+
+// ---- stage 3: economy -------------------------------------------------------
+
+/// <summary>A loan was taken out.</summary>
+public sealed record LoanTaken(Tick Tick, int TierId, long Amount, int WeeklyInterestPercent) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.LoanTaken;
+}
+
+/// <summary>The bankruptcy ladder moved to a new penalty stage.</summary>
+public sealed record BankruptcyStageChanged(Tick Tick, int Stage, int DaysInDeficit, EconomyStatus Status)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.BankruptcyStageChanged;
+}
+
+/// <summary>The grace period and every penalty stage are spent. The run is over.</summary>
+public sealed record EconomyCollapsed(Tick Tick, int DaysInDeficit) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.EconomyCollapsed;
+}
+
+// ---- stage 3: counter-intelligence ------------------------------------------
+
+/// <summary>An investigation opened against an agent.</summary>
+public sealed record InvestigationStarted(Tick Tick, AgentId SubjectId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.InvestigationStarted;
+}
+
+/// <summary>An investigation step produced evidence, or a false lead.</summary>
+public sealed record InvestigationProgressed(Tick Tick, AgentId SubjectId, int Evidence, bool GainedEvidence)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.InvestigationProgressed;
+}
+
+/// <summary>An investigation concluded.</summary>
+public sealed record InvestigationConcluded(Tick Tick, AgentId SubjectId, InvestigationStatus Status, int Evidence)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.InvestigationConcluded;
+}
+
+/// <summary>The player named an agent as the mole.</summary>
+public sealed record AgentAccused(Tick Tick, AgentId AgentId, int Evidence, bool WasCorrect) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentAccused;
+}
+
+/// <summary>An accusation landed: the agent's hidden traits are now public.</summary>
+public sealed record AgentExposedAsMole(Tick Tick, AgentId AgentId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentExposedAsMole;
+}
+
+/// <summary>An accusation missed and the agent was cleared.</summary>
+public sealed record AgentCleared(Tick Tick, AgentId AgentId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentCleared;
+}
+
+/// <summary>A mole tipped the enemy off before a mission ran.</summary>
+public sealed record MissionCompromised(Tick Tick, int MissionId, int DifficultyBonus, int HeatAdded, bool IsPublic)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.MissionCompromised;
+}
+
+/// <summary>The set of offered contracts was regenerated for the week.</summary>
+public sealed record ContractOfferRefreshed(Tick Tick, int OfferCount) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.ContractOfferRefreshed;
 }

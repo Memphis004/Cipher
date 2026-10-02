@@ -167,11 +167,13 @@ public sealed record Resources
     };
 
     /// <summary>
-    /// Total weekly salary the current roster costs. Used by the stage-3 weekly
-    /// settlement and shown in the top bar as the net delta.
+    /// Total weekly salary the current roster costs.
     /// </summary>
     /// <remarks>
-    /// TODO(stage-3): fold in room upkeep and loan interest once those systems exist.
+    /// One line of the weekly settlement only — room upkeep and loan interest are added
+    /// by <see cref="EconomySystem.Settle"/>, which owns the full bill. The top bar
+    /// uses this figure because salary is the part a player can act on by changing
+    /// who they employ; the rest is not theirs to change mid-week.
     /// </remarks>
     public long ProjectedWeeklyCost(IEnumerable<Agent> roster)
     {

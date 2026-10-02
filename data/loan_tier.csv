@@ -1,0 +1,5 @@
+##var,id,tier,name_key,amount,weekly_interest_percent,reputation_required,max_active
+##type,int,int,string,long,int,int,int
+,10075,1,economy.loan.small,5000,5,0,1
+,10076,2,economy.loan.medium,12000,8,15,2
+,10077,3,economy.loan.large,25000,12,35,3

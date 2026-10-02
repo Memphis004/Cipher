@@ -78,6 +78,45 @@ collide.
 | `contract_offer` | 9001–9012 | |
 | `heat_tier` | keyed by `threshold` | thresholds strictly ascending, lowest ≤ 0 |
 
+### Stage-3 balance tables
+
+The stage-3 key-value tables each own a **10-wide band** starting at `100x1`. Keep at
+least 10 ids of headroom per table: `counter_intel_rule` has already outgrown one and
+forced `burnout_rule` up a band.
+
+| Table | Id range | Notes |
+|---|---|---|
+| `skill_cap` | 10001–10005 | one per skill |
+| `recovery_rule` | 10011–10015 | per room type; carries `mental_ratio_percent` |
+| `training_rule` | 10021–10025 | per room type; cost and affinity |
+| `economy_rule` | 10031–10046 | keyed by `rule_key`, not id |
+| `morale_band` | 10051–10054 | the coarse band the UI is allowed to see |
+| `loyalty_drift` | 10061–10071 | one row per `loyalty_drift_condition` |
+| `loan_tier` | 10075–10077 | |
+| `loyalty_threshold` | 10081–10084 | ascending; lowest is the most severe |
+| `recruit_rule` | 10101–10109 | keyed by (`hr_level`, `reputation_tier`) |
+| `counter_intel_rule` | 10121–10133 | keyed by `rule_key`, not id |
+| `burnout_rule` | 10141–10147 | keyed by `rule_key`, not id |
+
+`mental_ratio_percent` lives on a `recovery_rule` row rather than being a constant,
+but only the first row's value is meaningful — it is the organisation-wide ratio, and
+the validator reads it from there. Per-room percentages are the room's own rates.
+
+### Balance rules that live in the validator, not in review
+
+Some balance mistakes produce no error message anywhere: the system simply stops
+working, or starts working too well. Those are checked at build time instead.
+
+- `counter_intel_rule`: a case must be able to conclude (best case clears
+  `expose_threshold`) **and** must not conclude on average (expected case does not).
+  The second half matters as much as the first — evidence accrues identically whoever
+  you investigate, so a low threshold would have the desk expose people at random.
+- `recovery_rule`: mental recovery stays meaningfully slower than physical, and
+  specialist rooms (therapy, infirmary) are excluded from the per-room check so their
+  own rates do not trip it.
+- Every rule table's required keys must exist, so a typo cannot fall back to a default
+  and silently delete a penalty.
+
 The 31xx band for hidden traits is a deliberate convention: anything hidden
 (Mole, Deserter, …) is identifiable at a glance in a diff, and a designer cannot
 accidentally renumber one while editing the visible traits.
@@ -159,6 +198,7 @@ the narrative can diverge later without touching the UI.
 - id spaces disjoint
 - numeric sanity: costs > 0, security/alarm in range, skill levels contiguous,
   heat tiers strictly ascending, alarm non-decreasing success→partial→failure
+- balance relationships that would otherwise fail silently — see above
 
 It reports **every** failure at once rather than the first, so a designer sees
 all six broken references in one run instead of one per build.

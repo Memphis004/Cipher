@@ -1,0 +1,15 @@
+##var,id,rule_key,value
+##type,int,string,int
+,10121,investigation_ticks_per_step,24
+,10122,investigation_evidence_chance,35
+,10123,investigation_false_lead_chance,20
+,10124,mole_weekly_heat,6
+,10125,mole_leak_difficulty_bonus,2
+,10126,mole_leak_chance_percent,20
+,10127,wrong_accusation_loyalty_drain,12
+,10128,counter_intel_capacity_per_level,1
+,10129,investigation_evidence_gain,10
+,10130,investigation_false_lead_penalty,8
+,10131,investigation_max_steps,10
+,10132,expose_threshold,60
+,10133,mole_heat_floor_percent,25

@@ -300,14 +300,35 @@ public class GameSessionTests
     }
 
     [Fact]
-    public void StubPhases_ThrowNotImplemented_RatherThanFailingSilently()
+    public void DefaultPipeline_RegistersAllSixPhases()
     {
-        // knowledge.md rule 5: an out-of-scope body must be loud.
-        var pipeline = NotImplementedPhases.CreateStubPipeline(new NullSink());
-        var world = new WorldState(Seed);
-        var context = new PhaseContext(Tick.Zero) { Events = new NullSink() };
+        // Stage 3 replaced the stage-1 stubs with real implementations. A phase that
+        // silently dropped out of the pipeline would still tick cleanly, which is the
+        // exact failure knowledge.md rule 5 exists to prevent — so the registration
+        // itself is asserted.
+        var session = new GameSession(Seed);
 
-        Assert.Throws<NotImplementedException>(() => pipeline.RunTick(world, context));
+        var registered = session.Pipeline.Registered
+            .Select(p => p.Phase)
+            .OrderBy(p => (int)p)
+            .ToArray();
+
+        Assert.Equal(TickPipeline.CanonicalOrder.OrderBy(p => (int)p).ToArray(), registered);
+    }
+
+    [Fact]
+    public void DefaultPipeline_RunsEveryPhaseWithoutThrowing()
+    {
+        // The real counterpart to the old stub test: instead of asserting that an
+        // unimplemented phase is loud, assert that a fully-implemented one actually runs.
+        var session = new GameSession(Seed);
+        session.World.BaseLayout.UnlockedRoomTypeIds.Add(1);
+        session.Execute(new BuildRoomCommand(1, 0, 0, 3, "room.training", 100));
+        session.World.AddAgent(new Agent { Name = "Nok", ClassId = 1001 });
+
+        session.AdvanceTicks(Tick.TicksPerDay);
+
+        Assert.True(session.ValidateWorld(out string problem), problem);
     }
 
     // ---- determinism ---------------------------------------------------------

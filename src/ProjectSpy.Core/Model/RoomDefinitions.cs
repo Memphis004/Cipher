@@ -108,6 +108,23 @@ public static class RoomDefinitions
     /// <summary>Highest level a room type may reach.</summary>
     public static int MaxLevelFor(int roomTypeId) => Find(roomTypeId)?.MaxLevel ?? 1;
 
+    /// <summary>Every room type row, or an empty list when the tables are unavailable.</summary>
+    public static IReadOnlyList<RoomType> AllRoomTypes()
+    {
+        try
+        {
+            return Tables.TbRoomType.DataList;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return Array.Empty<RoomType>();
+        }
+        catch (FileNotFoundException)
+        {
+            return Array.Empty<RoomType>();
+        }
+    }
+
     /// <summary>
     /// Copies the table's minimum depth requirements into the layout, so
     /// <see cref="BaseLayout.CheckPlacement"/> can enforce them.

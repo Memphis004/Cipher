@@ -50,7 +50,7 @@ ProjectSpy/
 |-------|-------|--------|
 | 1 | Solution skeleton + domain model | **done** |
 | 2 | Data tables (Luban) | **done** |
-| 3 | Simulation core: agents, rooms, economy | not started |
+| 3 | Simulation core: agents, rooms, economy | **done** |
 | 4 | Mission generation + fog of war | not started |
 | 5 | Save/load, replay, determinism | not started |
 | 6 | Headless playability + balance harness | not started |
@@ -58,6 +58,12 @@ ProjectSpy/
 | 8 | UI framework + Base scene | not started |
 | 9 | Mission scene + game feel | not started |
 | 10 | Meta, Steam, polish, release | not started |
+
+Stage 3 delivered: the six-phase tick pipeline, training, recovery and burnout, weekly
+settlement with loans and a bankruptcy ladder, recruitment, loyalty drift and its
+escalation ladder, and the mole with counter-intel. Two headline guarantees are tested
+— a 365-day unattended run stays legal and reproducible, and two sessions with the same
+seed and command log produce byte-identical state.
 
 ## Build and test
 

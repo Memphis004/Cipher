@@ -24,6 +24,16 @@ public sealed class Agent
     /// <summary>Maximum value of either stamina pool.</summary>
     public const int MaxStamina = 100;
 
+    /// <summary>Maximum injury severity. A structural ceiling on the 0-100 scale.</summary>
+    public const int MaxInjurySeverity = 100;
+
+    /// <summary>
+    /// Loyalty a new hire starts at. Midpoint of the 0-100 scale — neutral, not
+    /// already grateful. This is structural (it defines the middle of the loyalty
+    /// scale) rather than a designer-tuned rate, so it stays in Core.
+    /// </summary>
+    public const int StartingLoyalty = 50;
+
     /// <summary>
     /// Stable identity. Settable only by <see cref="WorldState.AddAgent"/> /
     /// <see cref="WorldState.AddRecruit"/>, which own id allocation; a plain `init`
@@ -54,7 +64,7 @@ public sealed class Agent
     /// <summary>
     /// Raw loyalty, 0-100. The UI only ever receives <see cref="LoyaltyBand"/>.
     /// </summary>
-    public int Loyalty { get; set; } = 50;
+    public int Loyalty { get; set; } = StartingLoyalty;
 
     /// <summary>Trait ids from trait.csv (stage 2). Includes ids the player has not discovered.</summary>
     public List<int> TraitIds { get; } = new();
@@ -65,7 +75,34 @@ public sealed class Agent
     /// </summary>
     public List<int> UndiscoveredTraitIds { get; } = new();
 
+    /// <summary>
+    /// Injury severity, 0 (fit) to 100 (critical). Cleared by the infirmary over
+    /// several ticks at a rate that depends on severity.
+    /// </summary>
+    public int InjurySeverity { get; set; }
+
+    /// <summary>
+    /// True while the agent is burnt out. Entered when Mental hits zero and only
+    /// lifted by dedicated rest, so overworking is expensive to undo.
+    /// </summary>
+    public bool IsBurntOut { get; set; }
+
+    /// <summary>Ticks of dedicated rest accrued since burnout began.</summary>
+    public int BurnoutRecoveryTicks { get; set; }
+
+    /// <summary>
+    /// Ticks until this agent's next loyalty incident check is allowed. Set after a
+    /// complaint/raise/resignation so one bad week cannot emit four in a row.
+    /// </summary>
+    public int LoyaltyEscalationCooldown { get; set; }
+
     public AgentStatus Status { get; set; } = AgentStatus.Idle;
+
+    /// <summary>
+    /// The most recent escalation this agent triggered, kept so Presentation can
+    /// show a running history without Core logging prose.
+    /// </summary>
+    public LoyaltyEscalation LastEscalation { get; set; } = LoyaltyEscalation.None;
 
     /// <summary>Room the agent is assigned to, if any.</summary>
     public int AssignedRoomId { get; set; }
@@ -80,22 +117,28 @@ public sealed class Agent
     // ---- Derived -------------------------------------------------------------
 
     /// <summary>
-    /// The coarse band the UI displays. Thresholds are structural presentation
-    /// bands, not balance numbers, so they stay here (knowledge.md rule 3).
+    /// The coarse band the UI displays. This is the only loyalty-derived value
+    /// Presentation is allowed to see; the raw number stays inside Core.
     /// </summary>
-    public LoyaltyBand LoyaltyBand => Loyalty switch
-    {
-        >= 75 => LoyaltyBand.Devoted,
-        >= 50 => LoyaltyBand.Content,
-        >= 25 => LoyaltyBand.Uneasy,
-        _ => LoyaltyBand.Resentful,
-    };
+    /// <remarks>
+    /// Thresholds come from <c>morale_band.csv</c> so the bands a designer sees in the
+    /// table are the bands the game uses. See <see cref="LoyaltySystem.BandFor"/>.
+    /// </remarks>
+    public LoyaltyBand LoyaltyBand => LoyaltySystem.BandFor(Loyalty);
 
     /// <summary>True when either stamina pool is too low to train at full rate.</summary>
     public bool IsOverworking => PhysicalStamina < OverworkThreshold || MentalStamina < OverworkThreshold;
 
     /// <summary>True when the agent can be sent on a mission right now.</summary>
-    public bool IsDeployable => Status.IsActive() && !IsOverworking && Status != AgentStatus.Captured;
+    public bool IsDeployable =>
+        Status.IsActive() && !IsOverworking && !IsBurntOut && Status != AgentStatus.Captured;
+
+    /// <summary>
+    /// True when the agent will refuse a new assignment. Burnout is the one status
+    /// that overrides availability, which is what makes it a real punishment rather
+    /// than a flavour label.
+    /// </summary>
+    public bool RefusesAssignment => IsBurntOut || !Status.IsActive();
 
     /// <summary>True when the agent has any trait, discovered or not.</summary>
     public bool HasTrait(int traitId) => TraitIds.Contains(traitId) || UndiscoveredTraitIds.Contains(traitId);
@@ -115,6 +158,9 @@ public sealed class Agent
         MentalStamina = Math.Clamp(MentalStamina, 0, MaxStamina);
         Loyalty = Math.Clamp(Loyalty, 0, 100);
         Exp = Math.Max(0, Exp);
+        InjurySeverity = Math.Clamp(InjurySeverity, 0, MaxInjurySeverity);
+        if (BurnoutRecoveryTicks < 0) BurnoutRecoveryTicks = 0;
+        if (LoyaltyEscalationCooldown < 0) LoyaltyEscalationCooldown = 0;
         if (Level < 1) Level = 1;
     }
 
@@ -148,12 +194,58 @@ public sealed class Agent
 
         Exp += amount;
 
-        // TODO(stage-3): replace with skill_curve.csv lookup (exp_required per level).
-        const int expPerLevel = 100;
-        while (Exp >= expPerLevel * Level && Level < 20)
+        while (Level < SimulationRules.MaxLevel)
         {
-            Exp -= expPerLevel * Level;
+            int required = SimulationRules.ExpRequiredForLevel(Level);
+            if (required <= 0 || Exp < required)
+                break;
+
+            Exp -= required;
             Level++;
         }
     }
+
+    /// <summary>
+    /// Awards training progress toward a single skill, respecting that skill's cap.
+    /// </summary>
+    /// <remarks>
+    /// Progress on a skill already at its hard cap is discarded rather than banked.
+    /// Banking it would let a capped agent sit on an unspent pool and cash it in if
+    /// the cap were ever raised — hidden state that makes balance impossible to
+    /// reason about from the outside.
+    /// </remarks>
+    public int AddSkillExp(SkillKind skill, int amount)
+    {
+        if (amount <= 0)
+            return 0;
+
+        int before = Skills[skill];
+        int cap = SimulationRules.HardCapFor(skill);
+
+        if (cap > 0 && before >= cap)
+            return 0;
+
+        // Clamp to the cap rather than adding then trimming: adding first would let the
+        // stored value overshoot the cap, and the overshoot would then be "spent"
+        // against a future cap increase — hidden state that no UI could explain.
+        int target = before + amount;
+        if (cap > 0 && target > cap)
+            target = cap;
+
+        Skills = SkillSet.ClampNonNegative(Skills.With(skill, target));
+        return Skills[skill] - before;
+    }
+}
+
+/// <summary>
+/// How far a loyalty problem has escalated. Presentation maps these to localized
+/// text; Core never writes the sentence itself (knowledge.md rule 4).
+/// </summary>
+public enum LoyaltyEscalation
+{
+    None = 0,
+    Complaint = 1,
+    RaiseDemand = 2,
+    ResignationNotice = 3,
+    Defection = 4,
 }

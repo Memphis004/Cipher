@@ -1,0 +1,6 @@
+##var,id,threshold,escalation,chance_percent,cooldown_days
+##type,int,int,string,int,int
+,10081,70,loyalty.escalation.complaint,15,3
+,10082,50,loyalty.escalation.raise_demand,20,5
+,10083,30,loyalty.escalation.resignation_notice,25,7
+,10084,10,loyalty.escalation.defection,30,10

@@ -25,7 +25,11 @@ public sealed class WorldState
         RngStreams = new RngStreams(seed);
         Resources = Resources.Starting;
         BaseLayout = new BaseLayout(baseWidth, baseHeight);
+        Economy = new EconomyState();
+        CounterIntel = new CounterIntelState();
         NextAgentId = 1;
+        NextMissionId = 1;
+        NextContractId = 1;
     }
 
     /// <summary>
@@ -46,8 +50,53 @@ public sealed class WorldState
     /// <summary>Named independent random streams.</summary>
     public RngStreams RngStreams { get; init; }
 
+    /// <summary>
+    /// Where commands and systems publish their events.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="GameSession"/> sets this when it takes ownership of a world. It
+    /// exists because <see cref="ICommand.Apply"/> predates the stage-3 systems and takes
+    /// only a world and an RNG — changing that signature now would mean editing every
+    /// command and every test that calls it directly, for the sake of one extra parameter.
+    /// </para>
+    /// <para>
+    /// Events still go through the session's pending buffer, so a command that publishes
+    /// here is buffered and flushed at exactly the same point as any other event: a
+    /// handler still cannot re-enter mid-command and observe a half-mutated world.
+    /// </para>
+    /// <para>
+    /// Null in tests that drive the systems directly, which publish their own events.
+    /// </para>
+    /// </remarks>
+    public IEventSink? Events { get; set; }
+
     /// <summary>Next id to hand out to a new agent.</summary>
     public int NextAgentId { get; set; } = 1;
+
+    /// <summary>Next id to hand out to a mission.</summary>
+    public int NextMissionId { get; set; } = 1;
+
+    /// <summary>Next id to hand out to a contract offer.</summary>
+    public int NextContractId { get; set; } = 1;
+
+    /// <summary>Loans, deficit countdown and the bankruptcy escalation stage.</summary>
+    public EconomyState Economy { get; init; } = new();
+
+    /// <summary>Running investigations and the mole's leak history.</summary>
+    public CounterIntelState CounterIntel { get; init; } = new();
+
+    /// <summary>Ticks until the recruiting pool refreshes.</summary>
+    public int RecruitPoolRefreshTicks { get; set; }
+
+    /// <summary>Tick the current recruit pool was generated on.</summary>
+    public Tick RecruitPoolGeneratedOnTick { get; set; }
+
+    /// <summary>
+    /// Week of the last weekly settlement, so settlement runs exactly once per week
+    /// even if a caller advances ticks in unusual batches.
+    /// </summary>
+    public int LastSettledWeek { get; set; } = -1;
 
     /// <summary>Hired agents, by id.</summary>
     public Dictionary<AgentId, Agent> Agents { get; } = new();
@@ -230,9 +279,54 @@ public sealed class WorldState
                 return false;
             }
 
+            if (agent.InjurySeverity is < 0 or > Agent.MaxInjurySeverity)
+            {
+                problem = "InjurySeverityOutOfRange";
+                return false;
+            }
+
             if (agent.AssignedRoomId != 0 && BaseLayout.GetRoom(new RoomId(agent.AssignedRoomId)) is null)
             {
                 problem = "AgentAssignedToMissingRoom";
+                return false;
+            }
+
+            // A burnt-out agent must not be holding down a workstation: the whole point
+            // of burnout is that they refuse, so the invariant is enforced on state
+            // rather than trusted to every assignment path.
+            if (agent.IsBurntOut && agent.Status == AgentStatus.Training)
+            {
+                problem = "BurntOutAgentStillTraining";
+                return false;
+            }
+        }
+
+        if (Economy.DaysInDeficit < 0)
+        {
+            problem = "NegativeDeficitDays";
+            return false;
+        }
+
+        foreach (LoanState loan in Economy.Loans)
+        {
+            if (loan.Outstanding < 0 || loan.Principal < 0)
+            {
+                problem = "NegativeLoanBalance";
+                return false;
+            }
+        }
+
+        foreach (InvestigationState investigation in CounterIntel.Investigations)
+        {
+            if (investigation.Evidence is < 0 or > 100)
+            {
+                problem = "EvidenceOutOfRange";
+                return false;
+            }
+
+            if (investigation.ProgressTicks < 0)
+            {
+                problem = "NegativeInvestigationProgress";
                 return false;
             }
         }
@@ -309,7 +403,68 @@ public sealed class WorldState
                 hash = Mix(hash, (uint)agent.AssignedRoomId);
                 hash = Mix(hash, (ulong)agent.SalaryPerWeek);
                 hash = Mix(hash, (uint)agent.MissionsCompleted);
+                hash = Mix(hash, (uint)agent.InjurySeverity);
+                hash = Mix(hash, agent.IsBurntOut ? 1UL : 0UL);
+                hash = Mix(hash, (uint)agent.BurnoutRecoveryTicks);
+                hash = Mix(hash, (uint)agent.LoyaltyEscalationCooldown);
+                hash = Mix(hash, (uint)agent.LastEscalation);
+
+                // Hidden traits participate. They are simulation state, so a world
+                // where a mole has been hired must not hash the same as one where they
+                // were not — otherwise the determinism test would happily bless two
+                // genuinely different worlds.
+                foreach (int traitId in agent.TraitIds.OrderBy(t => t))
+                    hash = Mix(hash, (uint)traitId);
+
+                foreach (int traitId in agent.UndiscoveredTraitIds.OrderBy(t => t))
+                    hash = Mix(hash, (uint)(traitId | 0x8000_0000));
             }
+
+            foreach (Agent recruit in Recruits.Values.OrderBy(a => a.Id.Value))
+            {
+                hash = Mix(hash, (ulong)recruit.Id.Value);
+                hash = Mix(hash, (ulong)recruit.ClassId);
+                hash = Mix(hash, (uint)recruit.Skills.Highest());
+                hash = Mix(hash, (ulong)recruit.SalaryPerWeek);
+                hash = Mix(hash, (uint)recruit.TraitIds.Count);
+                hash = Mix(hash, (uint)recruit.UndiscoveredTraitIds.Count);
+            }
+
+            // Economy and counter-intel are part of the world, so they must be part of
+            // the fingerprint. Leaving them out would let two runs that differ only in
+            // bankruptcy stage compare equal.
+            hash = Mix(hash, (ulong)Economy.TotalOutstanding);
+            hash = Mix(hash, (ulong)Economy.PendingInterest);
+            hash = Mix(hash, (ulong)Economy.TotalInterestPaid);
+            hash = Mix(hash, (ulong)Economy.TotalSalariesPaid);
+            hash = Mix(hash, (ulong)Economy.TotalUpkeepPaid);
+            hash = Mix(hash, (uint)Economy.DaysInDeficit);
+            hash = Mix(hash, (uint)Economy.PenaltyStage);
+            hash = Mix(hash, (uint)Economy.ActiveLoanCount);
+
+            foreach (InvestigationState investigation in CounterIntel.Investigations
+                         .OrderBy(i => i.SubjectId.Value))
+            {
+                hash = Mix(hash, (ulong)investigation.SubjectId.Value);
+                hash = Mix(hash, (uint)investigation.Evidence);
+                hash = Mix(hash, (uint)investigation.ProgressTicks);
+                hash = Mix(hash, (uint)investigation.Status);
+            }
+
+            foreach (MoleLeak leak in CounterIntel.LeakLog)
+            {
+                hash = Mix(hash, (ulong)leak.Tick.Value);
+                hash = Mix(hash, (ulong)leak.MissionId);
+                hash = Mix(hash, (ulong)leak.AgentId.Value);
+                hash = Mix(hash, (uint)leak.HeatAdded);
+                hash = Mix(hash, (uint)leak.DifficultyBonus);
+            }
+
+            hash = Mix(hash, (uint)CounterIntel.ExposedCount);
+            hash = Mix(hash, (uint)CounterIntel.WrongAccusations);
+
+            hash = Mix(hash, (uint)Recruits.Count);
+            hash = Mix(hash, (uint)RecruitPoolRefreshTicks);
 
             foreach (Room room in BaseLayout.Rooms.OrderBy(x => x.Id.Value))
             {

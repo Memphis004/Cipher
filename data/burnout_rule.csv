@@ -1,0 +1,9 @@
+##var,id,rule_key,value
+##type,int,string,int
+,10141,burnout_mental_threshold,0
+,10142,burnout_daily_loyalty_drain,4
+,10143,burnout_resting_loyalty_drain,1
+,10144,burnout_recovery_mental_percent,2
+,10145,burnout_recovery_physical_percent,1
+,10146,burnout_stamina_floor,20
+,10147,burnout_exit_mental,30

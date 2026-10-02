@@ -258,3 +258,25 @@
 ,event.nar.pickpocket_the_foreman,Pickpocket the foreman
 ,event.steal_the_roster,Steal the roster
 ,event.nar.steal_the_roster,Steal the roster
+,economy.loan.small,Small Loan
+,economy.loan.medium,Medium Loan
+,economy.loan.large,Large Loan
+,morale.band.devoted,Devoted
+,morale.band.content,Content
+,morale.band.uneasy,Uneasy
+,morale.band.resentful,Resentful
+,loyalty.drift.overworked,Overworked
+,loyalty.drift.workload,Heavy workload
+,loyalty.drift.idle,Left idle
+,loyalty.drift.mission_loss,Mission lost
+,loyalty.drift.mission_success,Mission success
+,loyalty.drift.roommate,Awkward roommate
+,loyalty.drift.facility,Poor facilities
+,loyalty.drift.facility_good,Good facilities
+,loyalty.drift.pay_fair,Paid fairly
+,loyalty.drift.pay_unfair,Paid below market
+,loyalty.drift.burnout,Burnout
+,loyalty.escalation.complaint,Complained
+,loyalty.escalation.raise_demand,Demanded a raise
+,loyalty.escalation.resignation_notice,Gave notice
+,loyalty.escalation.defection,Defected

@@ -1,0 +1,13 @@
+##var,id,source_key,delta,condition
+##type,int,string,int,string
+,10061,loyalty.drift.overworked,-3,Overworked
+,10062,loyalty.drift.workload,-1,Working
+,10063,loyalty.drift.idle,-2,Idle
+,10064,loyalty.drift.mission_loss,-6,MissionLoss
+,10065,loyalty.drift.mission_success,4,MissionSuccess
+,10066,loyalty.drift.roommate,-2,BadRoommate
+,10067,loyalty.drift.facility,-1,PoorFacility
+,10068,loyalty.drift.facility_good,1,GoodFacility
+,10069,loyalty.drift.pay_fair,2,PayFair
+,10070,loyalty.drift.pay_unfair,-4,PayUnfair
+,10071,loyalty.drift.burnout,-5,Burnout

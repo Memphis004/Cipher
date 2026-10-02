@@ -1,0 +1,7 @@
+##var,id,room_type_id,stamina_cost_physical,stamina_cost_mental,level_multiplier_percent,affinity_base_percent,overwork_threshold,overwork_gain_percent,overwork_loyalty_drain
+##type,int,int,int,int,int,int,int,int,int
+,10021,4001,2,0,25,100,20,25,3
+,10022,4002,2,0,25,100,20,25,3
+,10023,4003,0,2,25,110,20,25,3
+,10024,4004,0,2,25,100,20,25,3
+,10025,4005,1,1,25,90,20,25,3

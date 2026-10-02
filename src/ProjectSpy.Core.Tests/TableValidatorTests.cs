@@ -158,12 +158,17 @@ public class TableValidatorTests
                 .Concat(Validator.Tables.TbGadget.DataList.Select(x => x.NameKey))
                 .Concat(Validator.Tables.TbItem.DataList.Select(x => x.NameKey))
                 .Concat(Validator.Tables.TbTrait.DataList.Select(x => x.NameKey))
-                .Concat(Validator.Tables.TbTrait.DataList.Select(x => x.DescKey)),
+                .Concat(Validator.Tables.TbTrait.DataList.Select(x => x.DescKey))
+                // Stage 3 tables that carry player-facing keys.
+                .Concat(Validator.Tables.TbLoanTier.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbMoraleBand.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbLoyaltyDrift.DataList.Select(x => x.SourceKey))
+                .Concat(Validator.Tables.TbLoyaltyThreshold.DataList.Select(x => x.Escalation)),
             StringComparer.Ordinal).Count;
 
         Assert.Equal(referenced, validator.Thai.Count);
         Assert.Equal(referenced, validator.English.Count);
-        Assert.True(referenced >= 250, $"Expected a substantial content set, found {referenced} keys.");
+        Assert.True(referenced >= 280, $"Expected a substantial content set, found {referenced} keys.");
     }
 
     [Fact]

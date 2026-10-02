@@ -31,6 +31,24 @@ public sealed class GameSession : IEventSink
     private readonly EventStream _stream = new();
     private readonly TickPipeline _pipeline;
 
+    /// <summary>
+    /// The replay input: commands and tick advances in the order they actually
+    /// happened.
+    /// </summary>
+    /// <remarks>
+    /// Stage 1 kept two parallel logs and replayed every command before the first tick
+    /// batch. That happens to work while the player only ever issues commands before the
+    /// first tick, and silently corrupts the replay the moment they do not: building a
+    /// room, playing a week, then building another would replay both builds before the
+    /// week ever ran, and the resulting state would differ from the original. A
+    /// determinism test built on that arrangement would prove nothing, because the
+    /// divergence would have been in the harness rather than in the simulation.
+    /// <para>
+    /// So the order is recorded directly instead of being reconstructed.
+    /// </para>
+    /// </remarks>
+    private readonly List<ReplayEntry> _replayLog = new();
+
     /// <summary>Creates a session over a fresh world.</summary>
     public GameSession(ulong seed, int baseWidth = 24, int baseHeight = 12)
         : this(new WorldState(seed, baseWidth, baseHeight))
@@ -41,7 +59,14 @@ public sealed class GameSession : IEventSink
     public GameSession(WorldState world)
     {
         World = world ?? throw new ArgumentNullException(nameof(world));
-        _pipeline = new TickPipeline(this);
+
+        // The world publishes through this session's pending buffer, so a command's
+        // events are buffered and flushed at exactly the same point as a phase's.
+        World.Events = this;
+
+        // The production pipeline: all six phases, in canonical order. A session
+        // constructed this way is fully simulated from tick one.
+        _pipeline = Phases.CreateDefault(this);
         WireClock();
     }
 
@@ -56,6 +81,19 @@ public sealed class GameSession : IEventSink
 
     /// <summary>Every successfully applied command, in order. The replay input.</summary>
     public IReadOnlyList<ICommand> CommandLog => _commandLog;
+
+    /// <summary>
+    /// Every tick advance, recorded so a replay reproduces time exactly.
+    /// </summary>
+    /// <remarks>
+    /// A log of only player decisions would not capture how far the clock ran between
+    /// them, and the simulation is heavily time-dependent — so the advance count has to
+    /// be part of the replay input, not an assumption about how fast the player clicks.
+    /// </remarks>
+    private readonly List<int> _tickLog = new();
+
+    /// <summary>Tick advances in order. The replay input, alongside the command log.</summary>
+    public IReadOnlyList<int> TickLog => _tickLog;
 
     /// <summary>Events published during the current command or tick, awaiting flush.</summary>
     public IReadOnlyList<GameEvent> PendingEvents => _pending;
@@ -138,6 +176,7 @@ public sealed class GameSession : IEventSink
             Publish(new ResourcesChanged(World.Clock.Current, before, World.Resources));
 
         _commandLog.Add(command);
+        _replayLog.Add(ReplayEntry.ForCommand(command));
         FlushEvents();
         return CommandResult.Ok;
     }
@@ -146,6 +185,13 @@ public sealed class GameSession : IEventSink
     /// Advances one tick: raises tick/day/week notifications, then runs the tick
     /// pipeline in its canonical order, then flushes events.
     /// </summary>
+    /// <remarks>
+    /// The week boundary deliberately does <em>not</em> publish a
+    /// <see cref="WeekSettled"/> event here. Stage 1 did, with zero amounts, as a
+    /// placeholder; now that <see cref="EconomySystem"/> owns settlement, publishing one
+    /// here as well would show the player two settlements a week, one of them always
+    /// zero. The real event carries the real totals and comes from the economy phase.
+    /// </remarks>
     public void AdvanceTick()
     {
         Tick previous = World.Clock.Current;
@@ -157,9 +203,6 @@ public sealed class GameSession : IEventSink
 
         if (!now.IsSameDay(previous))
             Publish(new DayChanged(now, now.Day, now.Week));
-
-        if (!now.IsSameWeek(previous))
-            Publish(new WeekSettled(now, now.Week, SalariesPaid: 0, UpkeepPaid: 0, InterestPaid: 0));
 
         _pipeline.RunTick(World, new PhaseContext(now)
         {
@@ -175,6 +218,12 @@ public sealed class GameSession : IEventSink
     public void AdvanceTicks(int count)
     {
         if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot rewind time.");
+
+        // Recorded as one entry rather than N, so a replay reproduces the same batching.
+        // The batching is what decides whether a periodic rule (weekly settlement, pool
+        // refresh) fires, so it has to be replayed exactly rather than inferred.
+        _tickLog.Add(count);
+        _replayLog.Add(ReplayEntry.ForTicks(count));
 
         for (int i = 0; i < count; i++)
             AdvanceTick();
@@ -199,41 +248,74 @@ public sealed class GameSession : IEventSink
     // ---- Replay --------------------------------------------------------------
 
     /// <summary>
-    /// Builds a second session that replays this session's seed and command log.
-    /// Used by the stage-5 verifier and by determinism tests.
+    /// Builds a fresh session that will replay this one's input.
     /// </summary>
     /// <remarks>
-    /// Tick advances are recorded as commands so the replay reproduces time exactly;
-    /// without that, a log of only player decisions would not capture how far the
-    /// clock ran between them.
+    /// Only the seed and the grid dimensions carry over. Everything else — resources,
+    /// roster, RNG state — is reproduced by re-executing the log, because copying it
+    /// would let a divergence between the original run and the replay hide behind the
+    /// copy.
     /// </remarks>
     public GameSession CreateReplaySession()
-    {
-        var replay = new GameSession(World.Seed, World.BaseLayout.Width, World.BaseLayout.Height);
-        replay.World.Resources = World.Resources;
-        return replay;
-    }
+        => new(World.Seed, World.BaseLayout.Width, World.BaseLayout.Height);
 
     /// <summary>
-    /// Replays this session's log against a fresh session and returns whether the two
-    /// states match.
+    /// Replays this session's recorded input against a fresh session and compares the
+    /// resulting state hashes.
     /// </summary>
     /// <remarks>
-    /// TODO(stage-5): extend to check the per-1000-tick checkpoint hashes carried in
-    /// a ReplayFile, and report the first divergent tick rather than only a boolean.
+    /// A hash match is necessary but not sufficient evidence of determinism: two
+    /// different worlds can hash alike if the hash does not actually cover every field.
+    /// <see cref="WorldStateSerializer.ToCanonicalBytes"/> exists for the stricter
+    /// check, which compares the full state rather than a summary of it.
     /// </remarks>
     public bool VerifyReplay(out ulong replayHash)
     {
         GameSession replay = CreateReplaySession();
-
-        foreach (ICommand command in _commandLog)
-        {
-            replay.Execute(command);
-            replay.AdvanceTick();
-        }
-
+        Replay(replay);
         replayHash = replay.World.ComputeStateHash();
         return replayHash == World.ComputeStateHash();
+    }
+
+    /// <summary>
+    /// Replays the recorded input into a target session, in the order it originally
+    /// occurred.
+    /// </summary>
+    public void Replay(GameSession target)
+    {
+        if (target is null) throw new ArgumentNullException(nameof(target));
+
+        foreach (ReplayEntry entry in _replayLog)
+        {
+            if (entry.Command is not null)
+                target.Execute(entry.Command);
+            else
+                target.AdvanceTicks(entry.TickCount);
+        }
+    }
+
+    /// <summary>
+    /// One entry in the replay input: either a command or a batch of tick advances.
+    /// </summary>
+    private readonly record struct ReplayEntry
+    {
+        private ReplayEntry(ICommand? command, int tickCount)
+        {
+            Command = command;
+            TickCount = tickCount;
+        }
+
+        /// <summary>The command to re-execute, or null for a tick batch.</summary>
+        internal ICommand? Command { get; }
+
+        /// <summary>How many ticks to advance, or zero for a command.</summary>
+        internal int TickCount { get; }
+
+        internal static ReplayEntry ForCommand(ICommand command)
+            => new(command, 0);
+
+        internal static ReplayEntry ForTicks(int count)
+            => new(null, count);
     }
 
     // ---- Diagnostics ---------------------------------------------------------

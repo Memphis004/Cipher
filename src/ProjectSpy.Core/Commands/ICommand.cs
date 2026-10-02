@@ -135,6 +135,15 @@ public enum CommandReason
     ContractExpired = 50,
     ContractAlreadyAccepted = 51,
     ContractAlreadyDispatched = 52,
+
+    // ---- stage 3: economy, counter-intelligence ----
+    LoanLimitReached = 60,
+    UnknownLoanTier = 61,
+    NoOutstandingLoan = 62,
+    InvalidAmount = 63,
+    InvestigationAlreadyRunning = 64,
+    NoCounterIntelCapacity = 65,
+    AgentNotOnRoster = 66,
 }
 
 /// <summary>
