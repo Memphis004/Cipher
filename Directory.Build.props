@@ -1,0 +1,26 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!--
+      Nullability is an error for our own Stage 1+ code. Two projects are excluded:
+        - ProjectF.Tables: pre-existing third-party Luban runtime, untouched.
+        - ProjectSpy.Tables: contains a vendored copy of that same Luban runtime
+          (LubanLib/ByteBuf.cs). We must not edit vendored third-party source to
+          satisfy our own lint rules, so its warnings are not escalated.
+      Escalating them would break a build that otherwise works, which is the wrong
+      trade: these are warnings in code we do not own.
+    -->
+    <WarningsAsErrors
+      Condition="'$(MSBuildProjectName)' != 'ProjectF.Tables' AND '$(MSBuildProjectName)' != 'ProjectSpy.Tables'">nullable</WarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Deterministic>true</Deterministic>
+    <!-- Stage 5 rule: never let Core reach for a culture-dependent comparison. -->
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+</Project>

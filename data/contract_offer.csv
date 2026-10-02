@@ -1,0 +1,14 @@
+##var,id,tier,weight,client_faction,modifier_type,modifier_value
+##type,int,int,int,int,string,int
+,9001,1,40,1001,RewardFlat,0
+,9002,1,30,1002,HeatGainFlat,-5
+,9003,1,20,1003,DifficultyFlat,-5
+,9004,1,10,1004,RewardFlat,200
+,9005,2,35,1001,DifficultyFlat,-8
+,9006,2,30,1002,RewardFlat,500
+,9007,2,20,1003,HeatGainFlat,-10
+,9008,2,15,1004,DifficultyFlat,5
+,9009,3,30,1001,RewardFlat,1500
+,9010,3,28,1002,DifficultyFlat,-12
+,9011,3,22,1003,RewardFlat,2200
+,9012,3,20,1004,DifficultyFlat,10

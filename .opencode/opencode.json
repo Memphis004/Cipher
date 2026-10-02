@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "provider": {
+    "llama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Qwen3.8 27B Local",
+      "options": {
+        "baseURL": "http://127.0.0.1:8080/v1"
+      },
+      "models": {
+        "Qwen3.8-27B-GSQ-RCO-IQ3_S-MTP.gguf": {
+          "name": "Qwen3.8-27B IQ3_S-MTP",
+          "limit": {
+            "context": 32768,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+
+  "model": "llama/Qwen3.8-27B-GSQ-RCO-IQ3_S-MTP.gguf"
+}

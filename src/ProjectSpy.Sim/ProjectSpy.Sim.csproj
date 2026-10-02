@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>ProjectSpy.Sim</RootNamespace>
+    <AssemblyName>ProjectSpy.Sim</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProjectSpy.Core\ProjectSpy.Core.csproj" />
+  </ItemGroup>
+
+</Project>

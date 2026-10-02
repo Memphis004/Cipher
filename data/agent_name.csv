@@ -1,0 +1,382 @@
+##var,id,kind,value,region
+##type,int,NameKind,string,NameRegion
+,2001,First,Somchai,Central
+,2002,First,Nari,Central
+,2003,First,Anong,Central
+,2004,First,Chai,Central
+,2005,First,Ploy,Central
+,2006,First,Thiti,Central
+,2007,First,Kanya,Central
+,2008,First,Boonmee,Central
+,2009,First,Suda,Central
+,2010,First,Mali,Central
+,2011,First,Warit,Central
+,2012,First,Kanya,Central
+,2013,First,Siriporn,Central
+,2014,First,Dhanin,Central
+,2015,First,Pim,Central
+,2016,First,Rattana,Central
+,2017,First,Chalerm,Central
+,2018,First,Nok,Central
+,2019,First,Api,Central
+,2020,First,Sumai,Central
+,2021,First,Kittisak,Central
+,2022,First,Orn,Central
+,2023,First,Phuwadon,Central
+,2024,First,Manit,Central
+,2025,First,Saeng,Central
+,2026,First,Chaiyaporn,Central
+,2027,First,Thanawat,Central
+,2028,First,Pimchanok,Central
+,2029,First,Athit,Central
+,2030,First,Narin,Central
+,2031,First,Suda,Central
+,2032,First,Jintara,Central
+,2033,First,Vichai,Central
+,2034,First,Achara,Central
+,2035,First,Korrakot,Central
+,2036,First,Sangchai,Central
+,2037,First,Mook,Central
+,2038,First,Thanakrit,Central
+,2039,First,Ploy,Central
+,2040,First,Wanchai,Central
+,2041,First,Siriluk,Central
+,2042,First,Narong,Central
+,2043,First,Pimchanok,Central
+,2044,First,Tan,Central
+,2045,First,Lertsak,Central
+,2046,First,Prem,Central
+,2047,First,Chanya,Central
+,2048,First,Sakda,Central
+,2049,First,Mali,Central
+,2050,First,Supan,Central
+,2051,First,Kanya,Central
+,2052,First,Worawut,Central
+,2053,First,Rung,Central
+,2054,First,Pim,Central
+,2055,First,Narita,Central
+,2056,First,Anucha,Central
+,2057,First,Somsak,Central
+,2058,First,Pim,Central
+,2059,First,Thanawat,Central
+,2060,First,Bua,Central
+,2061,First,Kamon,Central
+,2062,First,Siriporn,Central
+,2063,First,Thanapon,Central
+,2064,First,Nam,Central
+,2065,First,Arthit,Central
+,2066,First,Ploy,Central
+,2067,First,Sit,Central
+,2068,First,Wan,Central
+,2069,First,Chai,Central
+,2070,First,Pimchanok,Central
+,2071,First,Than,Central
+,2072,First,Kanya,Central
+,2073,First,Suda,Central
+,2074,First,Ruk,Central
+,2075,First,Pim,Central
+,2076,First,Chawan,Central
+,2077,First,Siriluk,Central
+,2078,First,Nattapong,Central
+,2079,First,May,Central
+,2080,First,Anong,Central
+,2101,Surname,Thongchai,North
+,2102,Surname,Srisuwan,North
+,2103,Surname,Chaiyaphon,North
+,2104,Surname,Ngamsom,North
+,2105,Surname,Boonmee,North
+,2106,Surname,Rattanakosin,North
+,2107,Surname,Phromma,North
+,2108,Surname,Sirichai,North
+,2109,Surname,Wattanachai,North
+,2110,Surname,Kittisak,North
+,2111,Surname,Thongkham,North
+,2112,Surname,Rangsan,North
+,2113,Surname,Boonyarat,North
+,2114,Surname,Suwannapheng,North
+,2115,Surname,Chanthawong,North
+,2116,Surname,Pimchai,North
+,2117,Surname,Narawat,North
+,2118,Surname,Srisuthon,North
+,2119,Surname,Thanaphon,North
+,2120,Surname,Wongchai,North
+,2121,Surname,Rungsiwong,North
+,2122,Surname,Phromthep,North
+,2123,Surname,Sanchai,North
+,2124,Surname,Khanthong,North
+,2125,Surname,Boonchit,North
+,2126,Surname,Thawatchai,North
+,2127,Surname,Suphan,North
+,2128,Surname,Rattanawong,North
+,2129,Surname,Phaisarn,North
+,2130,Surname,Thongchai,North
+,2131,Surname,Sirikwan,North
+,2132,Surname,Boonyamin,North
+,2133,Surname,Chatchawan,North
+,2134,Surname,Narun,North
+,2135,Surname,Sukhumvit,North
+,2136,Surname,Thanawat,North
+,2137,Surname,Rungrath,North
+,2138,Surname,Phromchai,North
+,2139,Surname,Sitthichai,North
+,2140,Surname,Boonyarat,North
+,2141,Surname,Wattanakorn,North
+,2142,Surname,Kittipong,North
+,2143,Surname,Thanakrit,North
+,2144,Surname,Rattanaporn,North
+,2145,Surname,Suwannachai,North
+,2146,Surname,Chaiyasit,North
+,2147,Surname,Narongchai,North
+,2148,Surname,Phromman,North
+,2149,Surname,Srisakul,North
+,2150,Surname,Boonmee,North
+,2151,Surname,Thanphong,North
+,2152,Surname,Rungthep,North
+,2153,Surname,Chaiwat,North
+,2154,Surname,Wongsuwan,North
+,2155,Surname,Sirichai,North
+,2156,Surname,Promchai,North
+,2157,Surname,Naratsawan,North
+,2158,Surname,Thanakorn,North
+,2159,Surname,Rangsan,North
+,2160,Surname,Boonyachat,North
+,2201,Surname,Phromthep,Northeast
+,2202,Surname,Chaiyaphon,Northeast
+,2203,Surname,Srisuwan,Northeast
+,2204,Surname,Ngamsom,Northeast
+,2205,Surname,Thanaphon,Northeast
+,2206,Surname,Wattanachai,Northeast
+,2207,Surname,Kittisak,Northeast
+,2208,Surname,Boonmee,Northeast
+,2209,Surname,Rattanakosin,Northeast
+,2210,Surname,Sirichai,Northeast
+,2211,Surname,Chanthawong,Northeast
+,2212,Surname,Suwannapheng,Northeast
+,2213,Surname,Thanawat,Northeast
+,2214,Surname,Pimchai,Northeast
+,2215,Surname,Narawat,Northeast
+,2216,Surname,Srisuthon,Northeast
+,2217,Surname,Thongchai,Northeast
+,2218,Surname,Rungsiwong,Northeast
+,2219,Surname,Boonyarat,Northeast
+,2220,Surname,Phromma,Northeast
+,2221,Surname,Sangkhothai,Northeast
+,2222,Surname,Thongkham,Northeast
+,2223,Surname,Khanthong,Northeast
+,2224,Surname,Wongchai,Northeast
+,2225,Surname,Chatchawan,Northeast
+,2226,Surname,Phromthep,Northeast
+,2227,Surname,Sirichai,Northeast
+,2228,Surname,Boonyamin,Northeast
+,2229,Surname,Thanakrit,Northeast
+,2230,Surname,Rungrath,Northeast
+,2231,Surname,Sitthichai,Northeast
+,2232,Surname,Kittipong,Northeast
+,2233,Surname,Rattanaporn,Northeast
+,2234,Surname,Chaiyasit,Northeast
+,2235,Surname,Thanphong,Northeast
+,2236,Surname,Rungthep,Northeast
+,2237,Surname,Narongchai,Northeast
+,2238,Surname,Suwannachai,Northeast
+,2239,Surname,Promchai,Northeast
+,2240,Surname,Chaiwat,Northeast
+,2241,Surname,Sirisak,Northeast
+,2242,Surname,Boonyachat,Northeast
+,2243,Surname,Phromman,Northeast
+,2244,Surname,Thanakorn,Northeast
+,2245,Surname,Wongsuwan,Northeast
+,2246,Surname,Srisuthon,Northeast
+,2247,Surname,Chanthawong,Northeast
+,2248,Surname,Boonchit,Northeast
+,2249,Surname,Narun,Northeast
+,2250,Surname,Suphan,Northeast
+,2251,Surname,Thawatchai,Northeast
+,2252,Surname,Rangsan,Northeast
+,2253,Surname,Phaisarn,Northeast
+,2254,Surname,Sitthichai,Northeast
+,2255,Surname,Thanapat,Northeast
+,2256,Surname,Rungsiwong,Northeast
+,2257,Surname,Boonyarach,Northeast
+,2258,Surname,Chaiyasit,Northeast
+,2259,Surname,Wattanakorn,Northeast
+,2260,Surname,Kittipong,Northeast
+,2301,Surname,Chaiyaporn,East
+,2302,Surname,Suwannapheng,East
+,2303,Surname,Narongchai,East
+,2304,Surname,Rattanakosin,East
+,2305,Surname,Thongchai,East
+,2306,Surname,Phromthep,East
+,2307,Surname,Boonyamin,East
+,2308,Surname,Sangchai,East
+,2309,Surname,Wattanachai,East
+,2310,Surname,Chatchawan,East
+,2311,Surname,Suwannachai,East
+,2312,Surname,Thanaphon,East
+,2313,Surname,Rungrath,East
+,2314,Surname,Narawat,East
+,2315,Surname,Phromchai,East
+,2316,Surname,Boonyachat,East
+,2317,Surname,Sirichai,East
+,2318,Surname,Thanakrit,East
+,2319,Surname,Kittipong,East
+,2320,Surname,Rattanaporn,East
+,2321,Surname,Chaiyasit,East
+,2322,Surname,Wongchai,East
+,2323,Surname,Srisuthon,East
+,2324,Surname,Boonchit,East
+,2325,Surname,Phromman,East
+,2326,Surname,Suphan,East
+,2327,Surname,Thawatchai,East
+,2328,Surname,Chaiwat,East
+,2329,Surname,Rangsan,East
+,2330,Surname,Wongsuwan,East
+,2331,Surname,Naratsawan,East
+,2332,Surname,Thanakorn,East
+,2333,Surname,Promchai,East
+,2334,Surname,Suwannachai,East
+,2335,Surname,Boonyamin,East
+,2336,Surname,Sangkhothai,East
+,2337,Surname,Thanapat,East
+,2338,Surname,Sitthichai,East
+,2339,Surname,Wattanakorn,East
+,2340,Surname,Rungrath,East
+,2341,Surname,Chanthawong,East
+,2342,Surname,Rangsan,East
+,2343,Surname,Sirichai,East
+,2344,Surname,Thanphong,East
+,2345,Surname,Narongchai,East
+,2346,Surname,Kittisak,East
+,2347,Surname,Boonyarat,East
+,2348,Surname,Phaisarn,East
+,2349,Surname,Chaiyaphon,East
+,2350,Surname,Suphan,East
+,2351,Surname,Wongchai,East
+,2352,Surname,Thongkham,East
+,2353,Surname,Sangchai,East
+,2354,Surname,Narawat,East
+,2355,Surname,Rattanakosin,East
+,2356,Surname,Boonmee,East
+,2357,Surname,Thongchai,East
+,2358,Surname,Sangchai,East
+,2359,Surname,Rattanaporn,East
+,2360,Surname,Sirichai,East
+,2401,Surname,Chaiyasit,South
+,2402,Surname,Narongchai,South
+,2403,Surname,Boonmee,South
+,2404,Surname,Phromma,South
+,2405,Surname,Sangchai,South
+,2406,Surname,Suwannachai,South
+,2407,Surname,Thanaphon,South
+,2408,Surname,Wattanachai,South
+,2409,Surname,Boonyarach,South
+,2410,Surname,Rattanakosin,South
+,2411,Surname,Sirichai,South
+,2412,Surname,Chanthawong,South
+,2413,Surname,Kittisak,South
+,2414,Surname,Narawat,South
+,2415,Surname,Phromthep,South
+,2416,Surname,Suwannapheng,South
+,2417,Surname,Thanakrit,South
+,2418,Surname,Rungrath,South
+,2419,Surname,Boonyamin,South
+,2420,Surname,Chaiyaporn,South
+,2421,Surname,Rangsan,South
+,2422,Surname,Phromchai,South
+,2423,Surname,Wongchai,South
+,2424,Surname,Sangchai,South
+,2425,Surname,Thanakorn,South
+,2426,Surname,Promchai,South
+,2427,Surname,Suwannachai,South
+,2428,Surname,Sitthichai,South
+,2429,Surname,Chatchawan,South
+,2430,Surname,Thawatchai,South
+,2431,Surname,Boonchit,South
+,2432,Surname,Narun,South
+,2433,Surname,Phromman,South
+,2434,Surname,Suphan,South
+,2435,Surname,Chaiwat,South
+,2436,Surname,Thanphong,South
+,2437,Surname,Wongsuwan,South
+,2438,Surname,Rangsan,South
+,2439,Surname,Sangchai,South
+,2440,Surname,Wattanakorn,South
+,2441,Surname,Boonyachat,South
+,2442,Surname,Chaiyasit,South
+,2443,Surname,Kittipong,South
+,2444,Surname,Thongchai,South
+,2445,Surname,Rattanaporn,South
+,2446,Surname,Sirisak,South
+,2447,Surname,Boonmee,South
+,2448,Surname,Phromma,South
+,2449,Surname,Suwannapheng,South
+,2450,Surname,Narongchai,South
+,2451,Surname,Phromthep,South
+,2452,Surname,Thanapat,South
+,2453,Surname,Rangsiwong,South
+,2454,Surname,Sangchai,South
+,2455,Surname,Chaiyaphon,South
+,2456,Surname,Suwannachai,South
+,2457,Surname,Boonyarach,South
+,2458,Surname,Wattanachai,South
+,2459,Surname,Kittisak,South
+,2460,Surname,Thawatchai,South
+,2501,Codename,Lantern,Central
+,2502,Codename,Ashfall,Central
+,2503,Codename,Quiet Wolf,Central
+,2504,Codename,Paper Crane,Central
+,2505,Codename,Red Heron,Central
+,2506,Codename,Blackthorn,Central
+,2507,Codename,Slate Fox,Central
+,2508,Codename,Glass Moth,Central
+,2509,Codename,Nine Bells,Central
+,2510,Codename,Iron Kite,Central
+,2511,Codename,Salt Chapel,Central
+,2512,Codename,Winter Ledger,Central
+,2513,Codename,Copper Wren,Central
+,2514,Codename,Hollow Coin,Central
+,2515,Codename,Third Bell,Central
+,2516,Codename,Amber Room,Central
+,2517,Codename,Quiet Nail,Central
+,2518,Codename,Velvet Knife,Central
+,2519,Codename,Long Grass,Central
+,2520,Codename,Dry River,Central
+,2521,Codename,Paper Tiger,Central
+,2522,Codename,Salt Rain,Central
+,2523,Codename,Old Compass,Central
+,2524,Codename,Bittern,Central
+,2525,Codename,Green Ledger,Central
+,2526,Codename,Thin Knife,Central
+,2527,Codename,Cold Harbor,Central
+,2528,Codename,Blue Ruin,Central
+,2529,Codename,Wire Owl,Central
+,2530,Codename,Ash Sermon,Central
+,2531,Codename,Half Moon,Central
+,2532,Codename,Copper Nail,Central
+,2533,Codename,Quiet Ferry,Central
+,2534,Codename,Dust Ledger,Central
+,2535,Codename,Iron Kite,Central
+,2536,Codename,Salt Mirror,Central
+,2537,Codename,Night Ledger,Central
+,2538,Codename,Paper Anchor,Central
+,2539,Codename,Thin Bell,Central
+,2540,Codename,Cold Compass,Central
+,2541,Codename,Quiet Harbor,Central
+,2542,Codename,Amber Nail,Central
+,2543,Codename,Green Ruin,Central
+,2544,Codename,Wire Fox,Central
+,2545,Codename,Old Rain,Central
+,2546,Codename,Dry Sermon,Central
+,2547,Codename,Velvet Kite,Central
+,2548,Codename,Third Mirror,Central
+,2549,Codename,Iron Chapel,Central
+,2550,Codename,Salt Tiger,Central
+,2551,Codename,Nine Compass,Central
+,2552,Codename,Paper Bell,Central
+,2553,Codename,Cold Ledger,Central
+,2554,Codename,Blue Anchor,Central
+,2555,Codename,Hollow Wren,Central
+,2556,Codename,Quiet Ruin,Central
+,2557,Codename,Dust Fox,Central
+,2558,Codename,Amber Rain,Central
+,2559,Codename,Wire Harbor,Central
+,2560,Codename,Thin Sermon,Central

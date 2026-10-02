@@ -1,0 +1,114 @@
+<module name="">
+    <!--
+      Enum schemas for the CIPHER tables.
+
+      XML rather than __beans__.csv because Luban 5.1.0's CSV loader cannot express
+      nested module/enum definitions (verified: "can't find schema loader for
+      type: extName:csv"). Keep this file in sync with data/README.md's enum table.
+
+      Values are explicit and append-only: a Luban binary encodes enums as their
+      integer value, so renumbering one invalidates every existing .bytes file and
+      every save that referenced it.
+    -->
+
+    <!-- Broad room function. Drives the base-build UI grouping and the merge rule. -->
+    <enum name="RoomCategory">
+        <var name="Train" value="1"/>
+        <var name="Recover" value="2"/>
+        <var name="Ops" value="3"/>
+        <var name="Support" value="4"/>
+        <var name="Defense" value="5"/>
+        <var name="Admin" value="6"/>
+    </enum>
+
+    <!-- Which skill a training room develops. None = the room trains nothing. -->
+    <enum name="SkillKind">
+        <var name="None" value="0"/>
+        <var name="Infiltration" value="1"/>
+        <var name="Combat" value="2"/>
+        <var name="Tech" value="3"/>
+        <var name="Social" value="4"/>
+        <var name="Nerve" value="5"/>
+    </enum>
+
+    <!-- The kind of effect a room or gadget applies. Read by stage 3/4 effect code. -->
+    <enum name="EffectType">
+        <var name="None" value="0"/>
+        <!-- Recovery: stamina restored per tick. -->
+        <var name="RestorePhysical" value="1"/>
+        <var name="RestoreMental" value="2"/>
+        <!-- Support: mission slots, heat reduction, recruit quality. -->
+        <var name="MissionSlots" value="3"/>
+        <var name="HeatReduction" value="4"/>
+        <var name="RecruitQuality" value="5"/>
+        <var name="SalaryReduction" value="6"/>
+        <!-- Defense: raid mitigation. -->
+        <var name="RaidMitigation" value="7"/>
+        <var name="IntelCapacity" value="8"/>
+    </enum>
+
+    <!-- Trait polarity. Presentation only; effects are driven by effect_type. -->
+    <enum name="TraitPolarity">
+        <var name="Positive" value="1"/>
+        <var name="Negative" value="2"/>
+        <var name="Hidden" value="3"/>
+    </enum>
+
+    <!-- What a mission is for. Drives reward and event selection. -->
+    <enum name="ObjectiveType">
+        <var name="StealData" value="1"/>
+        <var name="Sabotage" value="2"/>
+        <var name="Assassinate" value="3"/>
+        <var name="Rescue" value="4"/>
+        <var name="PlantBug" value="5"/>
+        <var name="Recon" value="6"/>
+    </enum>
+
+    <!-- How many d100 the player must beat. Scaled by node security and modifiers. -->
+    <enum name="DifficultyClass">
+        <var name="Trivial" value="1"/>
+        <var name="Easy" value="2"/>
+        <var name="Standard" value="3"/>
+        <var name="Hard" value="4"/>
+        <var name="Extreme" value="5"/>
+        <var name="Impossible" value="6"/>
+    </enum>
+
+    <!-- Equipment slot a gadget occupies. -->
+    <enum name="GadgetSlot">
+        <var name="None" value="0"/>
+        <var name="Tool" value="1"/>
+        <var name="Tech" value="2"/>
+        <var name="Support" value="3"/>
+    </enum>
+
+    <!-- Item grouping for inventory UI and loot filtering. -->
+    <enum name="ItemCategory">
+        <var name="Gadget" value="1"/>
+        <var name="Consumable" value="2"/>
+        <var name="Intel" value="3"/>
+        <var name="Valuable" value="4"/>
+        <var name="Evidence" value="5"/>
+    </enum>
+
+    <!-- Comma-separated tag lists are stored as strings in CSV and parsed at load,
+         because Luban has no native string-set type. Kept as a documented
+         convention in data/README.md. -->
+
+    <!-- Which region a generated name belongs to. Purely flavour; affects nothing. -->
+    <enum name="NameRegion">
+        <var name="Central" value="1"/>
+        <var name="North" value="2"/>
+        <var name="Northeast" value="3"/>
+        <var name="East" value="4"/>
+        <var name="South" value="5"/>
+    </enum>
+
+    <!-- Which slot of a generated name a row supplies. agent_name.csv mixes all
+         three in one table so that a single table backs name generation. -->
+    <enum name="NameKind">
+        <var name="First" value="1"/>
+        <var name="Surname" value="2"/>
+        <var name="Codename" value="3"/>
+    </enum>
+</module>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Luban generated code lands in ./Gen (emitted by tools/gen.ps1, one run also
+    writes the binary tables into UnityProject/Assets/StreamingAssets/Tables).
+    Until codegen has run at least once, TableService.cs provides a minimal
+    hand-written fallback (ITableService + EmptyTableService) so ProjectSpy.Lib
+    compiles. The Luban C# runtime dependency is intentionally NOT referenced
+    yet: nothing here needs it until the first Gen/ output exists.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>ProjectSpy.Tables</RootNamespace>
+    <!-- LubanLib/ByteBuf.cs uses unsafe fast paths (same as the official
+         luban_examples Csharp_DotNet_bin project). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);CPU_SUPPORT_MEMORY_NOT_ALIGN</DefineConstants>
+  </PropertyGroup>
+
+</Project>

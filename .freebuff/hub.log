@@ -1,0 +1,47 @@
+info: ProjectSpy.HubServer[0]
+      ProjectSpy.HubServer listening on http://127.0.0.1:5170 (h2c) — presence state is in-memory
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://127.0.0.1:5170
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\UnityProjects\ProjectSpy\src\ProjectSpy.HubServer
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://127.0.0.1:5170/IPlayerHub/Connect - application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /IPlayerHub/Connect'
+[presence] connecting 46a3f0e10ba940a69360c8f3cb635a34
+info: Grpc.AspNetCore.Server.ServerCallHandler[14]
+      Error reading message.
+      System.IO.IOException: The request stream was aborted.
+       ---> Microsoft.AspNetCore.Connections.ConnectionAbortedException: The HTTP/2 connection faulted.
+       ---> Microsoft.AspNetCore.Connections.ConnectionResetException: An existing connection was forcibly closed by the remote host.
+       ---> System.Net.Sockets.SocketException (10054): An existing connection was forcibly closed by the remote host.
+         --- End of inner exception stack trace ---
+         at System.IO.Pipelines.Pipe.GetReadResult(ReadResult& result)
+         at System.IO.Pipelines.Pipe.GetReadAsyncResult()
+         at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2.Http2Connection.CopyPipeAsync(PipeReader reader, PipeWriter writer)
+         at System.IO.Pipelines.Pipe.GetReadResult(ReadResult& result)
+         at System.IO.Pipelines.Pipe.GetReadAsyncResult()
+         at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2.Http2Connection.ProcessRequestsAsync[TContext](IHttpApplication`1 application)
+         --- End of inner exception stack trace ---
+         --- End of inner exception stack trace ---
+         at System.IO.Pipelines.Pipe.GetReadResult(ReadResult& result)
+         at System.IO.Pipelines.Pipe.GetReadAsyncResult()
+         at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2.Http2MessageBody.ReadAsync(CancellationToken cancellationToken)
+         at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+         at Grpc.AspNetCore.Server.Internal.PipeExtensions.ReadStreamMessageAsync[T](PipeReader input, HttpContextServerCallContext serverCallContext, Func`2 deserializer, CancellationToken cancellationToken)
+[presence] disconnected 46a3f0e10ba940a69360c8f3cb635a34 (scene 4)
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /IPlayerHub/Connect'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://127.0.0.1:5170/IPlayerHub/Connect - 200 - application/grpc 1598036.3778ms
+info: Microsoft.AspNetCore.Server.Kestrel[32]
+      Connection id "0HNOU0TGDOO6C", Request id "0HNOU0TGDOO6C:00000001": the application completed without reading the entire request body.
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://127.0.0.1:5170/IPlayerHub/Connect - application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /IPlayerHub/Connect'
+[presence] connecting c5c501f85d574a91b3e4246fc4160951

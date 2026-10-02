@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>ProjectSpy.Core</RootNamespace>
+    <AssemblyName>ProjectSpy.Core</AssemblyName>
+    <!-- knowledge.md rule 2: Core must never reference UnityEngine. Enforced here
+         by construction (no Unity reference) and re-checked by the reflection test
+         added in stage 5. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      ProjectSpy.Tables is pure compiled data (Luban beans, no Unity types), so
+      depending on it does not violate the "Core must not reference UnityEngine" rule.
+      This is what lets Core read balance numbers from tables instead of hard-coding
+      them (knowledge.md rule 3).
+    -->
+    <ProjectReference Include="..\ProjectSpy.Tables\ProjectSpy.Tables.csproj" />
+  </ItemGroup>
+
+</Project>

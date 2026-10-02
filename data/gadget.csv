@@ -1,0 +1,14 @@
+##var,id,name_key,slot,craft_cost,craft_ticks,uses,effect_type,effect_value,required_room_level
+##type,int,string,GadgetSlot,int,int,int,string,int,int
+,8501,gadget.lockpick_set,Tool,150,12,5,InfiltrationBonus,6,1
+,8502,gadget.wire_cutter,Tool,120,10,6,InfiltrationBonus,4,1
+,8503,gadget.thermal_cutter,Tech,420,24,4,InfiltrationBonus,10,2
+,8504,gadget.signal_jammer,Tech,650,36,3,AlarmReduction,15,2
+,8505,gadget.voice_mimic,Support,780,40,3,SocialBonus,12,3
+,8506,gadget.forensic_kit,Support,260,20,4,IntelBonus,10,1
+,8507,gadget.medkit,Support,180,14,5,StaminaRestore,15,1
+,8508,gadget.stimulant,Support,240,16,6,StaminaRestore,10,2
+,8509,gadget.calming_draft,Support,210,16,5,MentalRestore,10,2
+,8510,gadget.recon_scope,Tech,380,26,4,RevealBonus,10,2
+,8511,gadget.lockbypass_card,Tech,320,20,5,InfiltrationBonus,8,2
+,8512,gadget.decoy_charge,Tool,300,22,3,AlarmReduction,20,3

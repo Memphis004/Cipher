@@ -1,0 +1,83 @@
+# ============================================================
+# ProjectF — .NET + Unity (2026 rewrite; Unity project lives at
+# UnityProject/ at the repo root)
+# ============================================================
+
+# ----- .NET build output -----
+[Bb]in/
+[Oo]bj/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.userprefs
+*.pidb
+*.pidb.meta
+*.pdb
+*.opendb
+*.booproj
+*.svd
+*.tmp
+*.swp
+*~
+.*.un~
+
+# Unity and IDEs emit *.sln / *.csproj next to their project folders.
+# Ignore those globally, then re-include ProjectF's own solution files.
+*.csproj
+*.sln
+!ProjectF.sln
+!src/**/*.csproj
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+
+# ----- Unity (applies at any depth) -----
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+ExportedObj/
+.consulo/
+Assets/AssetStoreTools*
+sysinfo.txt
+*.apk
+*.aab
+*.app
+*.unitypackage
+
+# NOTE: *.meta files are REQUIRED in version control and are not ignored.
+
+# ----- Generated / synced artifacts (regenerable via tools/*.ps1) -----
+# Luban.dll itself — download from https://github.com/focus-creative-games/luban/releases
+# (see the failure message in tools/gen.ps1)
+tools/luban/*
+!tools/luban/.gitkeep
+# Luban C# output (tools/gen.ps1)
+src/ProjectF.Tables/Gen/*
+!src/ProjectF.Tables/Gen/.gitkeep
+# Luban binary tables (tools/gen.ps1)
+UnityProject/Assets/StreamingAssets/Tables/*
+!UnityProject/Assets/StreamingAssets/Tables/.gitkeep
+# sync-dlls.ps1 output (netstandard2.1 DLLs for Unity)
+UnityProject/Assets/Plugins/ProjectF/*
+!UnityProject/Assets/Plugins/ProjectF/.gitkeep
+
+# ----- Obsidian vault (wikillm/) -----
+# Volatile workspace/cache state — regenerate themselves
+wikillm/.obsidian/workspace.json
+wikillm/.obsidian/workspace-mobile.json
+wikillm/.smart-env/
+# Third-party plugin bundles (reinstall via Obsidian community plugins;
+# manifest.json + data.json settings stay tracked)
+wikillm/.obsidian/plugins/*/main.js
+wikillm/.obsidian/plugins/*/main.js.map
+
+# ----- Misc -----
+.DS_Store

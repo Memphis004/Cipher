@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Luban-generated beans land in Gen/ (emitted by tools/gen.ps1). LubanLib/ holds a
+    vendored copy of the official Luban C# runtime (namespace Luban: ByteBuf,
+    BeanBase, ITypeId, StringUtil) so that ProjectSpy.Tables compiles standalone
+    with no dependency on any other project.
+
+    ProjectF.Tables carries its own identical copy of these files and is deliberately
+    left untouched; it is not referenced from here.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>ProjectSpy.Tables</RootNamespace>
+    <AssemblyName>ProjectSpy.Tables</AssemblyName>
+    <!-- ByteBuf.cs uses unsafe fast paths, same as the official
+         luban_examples Csharp_DotNet_bin project. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);CPU_SUPPORT_MEMORY_NOT_ALIGN</DefineConstants>
+  </PropertyGroup>
+
+</Project>

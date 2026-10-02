@@ -1,0 +1,17 @@
+##var,full_name,value_type,index,mode,group,comment,read_schema_from_file,input,output,tags
+##type,string,string,string,string,string,string,bool,string,string,string
+,TbAgentClass,AgentClass,,map,,,true,agent_class.csv,,
+,TbAgentName,AgentName,,map,,,true,agent_name.csv,,
+,TbTrait,Trait,,map,,,true,trait.csv,,
+,TbSkillCurve,SkillCurve,level,list,,,true,skill_curve.csv,,
+,TbRoomType,RoomType,,map,,,true,room_type.csv,,
+,TbRoomUpgrade,RoomUpgrade,,map,,,true,room_upgrade.csv,,
+,TbMissionType,MissionType,,map,,,true,mission_type.csv,,
+,TbMapGenRule,MapGenRule,tier,list,,,true,map_gen_rule.csv,,
+,TbNodeRoom,NodeRoom,,map,,,true,node_room.csv,,
+,TbMissionEvent,MissionEvent,,map,,,true,mission_event.csv,,
+,TbGadget,Gadget,,map,,,true,gadget.csv,,
+,TbItem,Item,,map,,,true,item.csv,,
+,TbLootTable,LootTable,,list,,,true,loot_table.csv,,
+,TbHeatTier,HeatTier,threshold,list,,,true,heat_tier.csv,,
+,TbContractOffer,ContractOffer,,map,,,true,contract_offer.csv,,

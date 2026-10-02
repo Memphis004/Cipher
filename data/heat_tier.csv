@@ -1,0 +1,8 @@
+##var,threshold,raid_chance_per_week,enemy_strength,contract_quality_bonus
+##type,int,int,int,int
+,0,0,1,0
+,25,5,2,0
+,50,12,3,5
+,75,20,4,10
+,100,30,5,18
+,130,42,6,28

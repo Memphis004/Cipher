@@ -1,0 +1,260 @@
+##var,key,text
+##type,string,string
+,class.infiltrator,Infiltrator
+,class.operative,Operative
+,class.technician,Technician
+,class.facilitator,Facilitator
+,room.gym,Gym
+,room.range,Firing Range
+,room.server_room,Server Room
+,room.social_lab,Social Lab
+,room.isolation_chamber,Isolation Chamber
+,room.dorm,Dormitory
+,room.infirmary,Infirmary
+,room.lounge,Lounge
+,room.therapy_office,Therapy Office
+,room.ops_center,Ops Center
+,room.comms_room,Comms Room
+,room.intel_archive,Intel Archive
+,room.workshop,Workshop
+,room.armory,Armory
+,room.cafeteria,Cafeteria
+,room.security_post,Security Post
+,room.vault,Vault
+,room.safe_room,Safe Room
+,room.decoy_front,Decoy Front
+,room.office,Office
+,room.hr,HR Department
+,room.counter_intel,Counter-Intel
+,mission.steal_data_t1,Steal Data (Tier 1)
+,mission.steal_data_t2,Steal Data (Tier 2)
+,mission.steal_data_t3,Steal Data (Tier 3)
+,mission.sabotage_t1,Sabotage (Tier 1)
+,mission.sabotage_t2,Sabotage (Tier 2)
+,mission.sabotage_t3,Sabotage (Tier 3)
+,mission.assassinate_t1,Assassinate (Tier 1)
+,mission.assassinate_t2,Assassinate (Tier 2)
+,mission.assassinate_t3,Assassinate (Tier 3)
+,mission.rescue_t1,Rescue (Tier 1)
+,mission.rescue_t2,Rescue (Tier 2)
+,mission.rescue_t3,Rescue (Tier 3)
+,mission.plant_bug_t1,Plant Bug (Tier 1)
+,mission.plant_bug_t2,Plant Bug (Tier 2)
+,mission.plant_bug_t3,Plant Bug (Tier 3)
+,mission.recon_t1,Reconnaissance (Tier 1)
+,mission.recon_t2,Reconnaissance (Tier 2)
+,mission.recon_t3,Reconnaissance (Tier 3)
+,node.server_rack,Server Rack
+,node.security_office,Security Office
+,node.corridor,Corridor
+,node.office,Office
+,node.vault,Vault
+,node.archive,Archive
+,node.lab,Laboratory
+,node.hq_lobby,HQ Lobby
+,node.warehouse,Warehouse
+,node.data_centre,Data Centre
+,node.meeting_room,Meeting Room
+,node.bunker,Bunker
+,node.satellite_uplink,Satellite Uplink
+,node.research_lab,Research Lab
+,node.private_collection,Private Collection
+,node.detention_block,Detention Block
+,node.parking_structure,Parking Structure
+,node.staff_kitchen,Staff Kitchen
+,gadget.lockpick_set,Lockpick Set
+,gadget.wire_cutter,Wire Cutter
+,gadget.thermal_cutter,Thermal Cutter
+,gadget.signal_jammer,Signal Jammer
+,gadget.voice_mimic,Voice Mimic
+,gadget.forensic_kit,Forensic Kit
+,gadget.medkit,Medkit
+,gadget.stimulant,Stimulant
+,gadget.calming_draft,Calming Draft
+,gadget.recon_scope,Recon Scope
+,gadget.lockbypass_card,Lock Bypass Card
+,gadget.decoy_charge,Decoy Charge
+,item.lockpick_set,Lockpick Set
+,item.wire_cutter,Wire Cutter
+,item.thermal_cutter,Thermal Cutter
+,item.signal_jammer,Signal Jammer
+,item.voice_mimic,Voice Mimic
+,item.forensic_kit,Forensic Kit
+,item.medkit,Medkit
+,item.stimulant,Stimulant
+,item.calming_draft,Calming Draft
+,item.ration_pack,Ration Pack
+,item.intel_dossier,Intel Dossier
+,item.encrypted_drive,Encrypted Drive
+,item.coded_ledger,Coded Ledger
+,item.contact_list,Contact List
+,item.emerald_pendant,Emerald Pendant
+,item.bearer_bond,Bearer Bond
+,item.rare_briefcase,Rare Briefcase
+,item.antique_seal,Antique Seal
+,item.evidence_tape,Evidence Tape
+,item.evidence_logbook,Evidence Logbook
+,item.fingerprints,Fingerprints
+,item.wiretap_recording,Wiretap Recording
+,trait.photographic_memory,Photographic Memory
+,trait.desc.photographic_memory,Remembers everything she sees, down to details she never wanted.
+,trait.calm_under_fire,Calm Under Fire
+,trait.desc.calm_under_fire,The more dangerous it gets, the steadier she becomes.
+,trait.lockpick_touch,Lockpick Touch
+,trait.desc.lockpick_touch,Picks a lock fast and clean, without forcing it.
+,trait.safe_hands,Safe Hands
+,trait.desc.safe_hands,Never fumbles fine work. It takes longer than most.
+,trait.reads_people,Reads People
+,trait.desc.reads_people,Spots what someone wants from the way they speak.
+,trait.compulsive,Compulsive
+,trait.desc.compulsive,Drills into a problem until it yields. Brilliant when left alone.
+,trait.quiet_breathing,Quiet Breathing
+,trait.desc.quiet_breathing,Moves without a sound, and sees further for standing still.
+,trait.street_wise,Street Wise
+,trait.desc.street_wise,Knows the back routes. Harder to pin down.
+,trait.paperwork,Paperwork
+,trait.desc.paperwork,Files everything properly, so intel comes back cleaner.
+,trait.steady_hands,Steady Hands
+,trait.desc.steady_hands,Will not drop something valuable, even under pressure.
+,trait.night_owl,Night Owl
+,trait.desc.night_owl,Comes alive after dark and notices what daylight hides.
+,trait.charming,Charming
+,trait.desc.charming,Makes people agree to things. Cheaper to hire.
+,trait.clumsy,Clumsy
+,trait.desc.clumsy,Drops things. Might break something valuable.
+,trait.hot_headed,Hot Headed
+,trait.desc.hot_headed,Fast reactions, short fuse. More likely to be heard.
+,trait.greedy,Greedy
+,trait.desc.greedy,Thinks about the money more than the mission. Loyalty slips.
+,trait.insomniac,Insomniac
+,trait.desc.insomniac,Still working at 3am. Recovers mentally at a poor rate.
+,trait.patient,Patient
+,trait.desc.patient,Unhurried, and less likely to make noise.
+,trait.absent_minded,Absent Minded
+,trait.desc.absent_minded,Thinks in the wrong direction. Learns skills slowly.
+,trait.drinker,Drinker
+,trait.desc.drinker,Drinks too much. Loyalty and output both slide.
+,trait.paranoid,Paranoid
+,trait.desc.paranoid,Trusts no one, and the room feels it.
+,trait.weak_stomach,Weak Stomach
+,trait.desc.weak_stomach,Stress hits the body hard. Recovers slowly.
+,trait.slow_learner,Slow Learner
+,trait.desc.slow_learner,Takes far longer than most to get anywhere.
+,trait.blunt,Blunt
+,trait.desc.blunt,Says exactly what she means. Makes negotiation harder.
+,trait.coward,Coward
+,trait.desc.coward,Breaks when threatened. Far more likely to be captured.
+,trait.mole,Mole
+,trait.desc.mole,Quietly feeds the enemy information. Raises risk without warning.
+,trait.deserter,Deserter
+,trait.desc.deserter,When cornered, leaves the team behind to get out.
+,trait.double_agent,Double Agent
+,trait.desc.double_agent,Sells to both sides. Intel comes back wrong.
+,trait.gambler,Gambler
+,trait.desc.gambler,Takes one risk too many. Can lose a fortune in a night.
+,trait.addict,Addict
+,trait.desc.addict,Keeps going on something. It will cost her.
+,trait.patriot,Patriot
+,trait.desc.patriot,Truly believes in the cause. Draws far less heat.
+,event.patch_firewall,Patch the firewall
+,event.nar.patch_firewall,Patch the firewall
+,event.clone_credentials,Clone staff credentials
+,event.nar.clone_credentials,Clone staff credentials
+,event.bypass_biometric,Bypass the biometric lock
+,event.nar.bypass_biometric,Bypass the biometric lock
+,event.distract_guard,Distract the guard
+,event.nar.distract_guard,Distract the guard
+,event.timing_the_shift,Time the guard rotation
+,event.nar.timing_the_shift,Time the guard rotation
+,event.seduce_the_secretary,Seduce the secretary
+,event.nar.seduce_the_secretary,Seduce the secretary
+,event.sneak_past_patrol,Sneak past the patrol
+,event.nar.sneak_past_patrol,Sneak past the patrol
+,event.cross_the_firewall_of_jokes,Walk through on a joke
+,event.nar.cross_the_firewall_of_jokes,Walk through on a joke
+,event.blind_copy,Copy the file by hand
+,event.nar.blind_copy,Copy the file by hand
+,event.forge_signature,Forge the signature
+,event.nar.forge_signature,Forge the signature
+,event.photograph_the_ledger,Photograph the ledger
+,event.nar.photograph_the_ledger,Photograph the ledger
+,event.crack_the_vault,Crack the vault
+,event.nar.crack_the_vault,Crack the vault
+,event.lift_the_combination,Lift the combination
+,event.nar.lift_the_combination,Lift the combination
+,event.sprint_the_haul,Sprint the haul out
+,event.nar.sprint_the_haul,Sprint the haul out
+,event.index_the_archive,Index the archive
+,event.nar.index_the_archive,Index the archive
+,event.pick_the_shelved_file,Take the shelved file
+,event.nar.pick_the_shelved_file,Take the shelved file
+,event.photocopy_the_index,Photocopy the index
+,event.nar.photocopy_the_index,Photocopy the index
+,event.calibrate_the_spectrometer,Calibrate the spectrometer
+,event.nar.calibrate_the_spectrometer,Calibrate the spectrometer
+,event.contaminate_the_sample,Contaminate the sample
+,event.nar.contaminate_the_sample,Contaminate the sample
+,event.smuggle_the_centrifuge,Smuggle out the centrifuge
+,event.nar.smuggle_the_centrifuge,Smuggle out the centrifuge
+,event.blend_with_the_visitors,Blend in with the visitors
+,event.nar.blend_with_the_visitors,Blend in with the visitors
+,event.forge_a_badge,Forge a badge
+,event.nar.forge_a_badge,Forge a badge
+,event.read_the_guest_list,Read the guest list
+,event.nar.read_the_guest_list,Read the guest list
+,event.locate_the_manifest,Find the manifest
+,event.nar.locate_the_manifest,Find the manifest
+,event.forklift_accomplice,Recruit the forklift operator
+,event.nar.forklift_accomplice,Recruit the forklift operator
+,event.carry_the_crate,Carry the crate out
+,event.nar.carry_the_crate,Carry the crate out
+,event.rack_space_analysis,Map the rack space
+,event.nar.rack_space_analysis,Map the rack space
+,event.cool_the_mainframe,Cool the mainframe
+,event.nar.cool_the_mainframe,Cool the mainframe
+,event.tape_the_backups,Pull the backups
+,event.nar.tape_the_backups,Pull the backups
+,event.eavesdrop_at_the_table,Listen in at the table
+,event.nar.eavesdrop_at_the_table,Listen in at the table
+,event.talk_to_the_secretary,Talk to the secretary
+,event.nar.talk_to_the_secretary,Talk to the secretary
+,event.replace_the_minutes,Replace the minutes
+,event.nar.replace_the_minutes,Replace the minutes
+,event.disable_the_bunker_alarm,Disable the bunker alarm
+,event.nar.disable_the_bunker_alarm,Disable the bunker alarm
+,event.bypass_the_bunker_interlock,Bypass the bunker interlock
+,event.nar.bypass_the_bunker_interlock,Bypass the bunker interlock
+,event.tunnel_under_the_bunker,Tunnel under the bunker
+,event.nar.tunnel_under_the_bunker,Tunnel under the bunker
+,event.align_the_dish,Align the dish
+,event.nar.align_the_dish,Align the dish
+,event.burn_a_transmission,Burn a transmission
+,event.nar.burn_a_transmission,Burn a transmission
+,event.ride_the_maintenance_cycle,Ride the maintenance window
+,event.nar.ride_the_maintenance_cycle,Ride the maintenance window
+,event.sequence_the_genome,Sequence the genome
+,event.nar.sequence_the_genome,Sequence the genome
+,event.steal_the_research_notes,Steal the research notes
+,event.nar.steal_the_research_notes,Steal the research notes
+,event.sabotage_the_centrifuge_queue,Sabotage the centrifuge queue
+,event.nar.sabotage_the_centrifuge_queue,Sabotage the centrifuge queue
+,event.appraise_the_collection,Appraise the collection
+,event.nar.appraise_the_collection,Appraise the collection
+,event.case_the_gems,Case the gems
+,event.nar.case_the_gems,Case the gems
+,event.sell_to_the_fence,Sell to the fence
+,event.nar.sell_to_the_fence,Sell to the fence
+,event.free_the_informant,Free the informant
+,event.nar.free_the_informant,Free the informant
+,event.fake_the_transfer_order,Fake the transfer order
+,event.nar.fake_the_transfer_order,Fake the transfer order
+,event.seduce_the_warden,Seduce the warden
+,event.nar.seduce_the_warden,Seduce the warden
+,event.hotwire_the_gate,Hotwire the gate
+,event.nar.hotwire_the_gate,Hotwire the gate
+,event.time_the_barrier_drop,Time the barrier drop
+,event.nar.time_the_barrier_drop,Time the barrier drop
+,event.pickpocket_the_foreman,Pickpocket the foreman
+,event.nar.pickpocket_the_foreman,Pickpocket the foreman
+,event.steal_the_roster,Steal the roster
+,event.nar.steal_the_roster,Steal the roster
