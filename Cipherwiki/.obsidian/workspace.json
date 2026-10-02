@@ -1,0 +1,223 @@
+{
+  "main": {
+    "id": "5cfbc5497b359d18",
+    "type": "split",
+    "children": [
+      {
+        "id": "1553ce5551532dfd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c6065331e2d8af88",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "69fe1450cfcdc317",
+    "type": "split",
+    "children": [
+      {
+        "id": "50a2cbbc1ac55f48",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "04644510f78ef01a",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "50d913dd67a5e334",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "c318187cedbdc4bc",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "0fcb000501933acd",
+    "type": "split",
+    "children": [
+      {
+        "id": "c925ff278e62b9a2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5067835b69c8a503",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "d281e8d5a300bc65",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "746dfb177cff5789",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "6c9cb556c394f473",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "5c1b168d7c7e2f4c",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "c6065331e2d8af88",
+  "lastOpenFiles": [
+    "wiki/design/core-fantasy.md",
+    "wiki/project-layout.md",
+    "wiki/sources/README.md",
+    "wiki/systems/tick-order-tests.md",
+    "wiki/systems/grid-commands.md",
+    "wiki/systems/world-state.md",
+    "wiki/systems/core-purity-tests.md",
+    "wiki/systems/table-validator.md",
+    "wiki/systems/simulation-rules.md",
+    "wiki/systems/determinism-tests.md",
+    "wiki/systems/replay.md",
+    "wiki/systems/grid-to-slot-migration.md",
+    "wiki/systems/mole-system.md",
+    "wiki/systems/game-clock.md",
+    "wiki/systems/game-event-buffer.md",
+    "wiki/systems/game-session.md",
+    "wiki/sources/ARCHITECTURE.md",
+    "wiki/design/project-vision.md",
+    "wiki/systems/tech-stack.md",
+    "wiki/design/art-direction.md",
+    "wiki/design/progression.md",
+    "wiki/design/heat-and-counter-intel.md",
+    "wiki/design/mission-and-fog-of-war.md",
+    "wiki/design/base-building.md",
+    "wiki/design/core-loop.md",
+    "wiki/design/agents.md",
+    "wiki/systems",
+    "wiki/sources",
+    "wiki/queries",
+    "wiki/design",
+    "wiki/concepts",
+    "wiki",
+    "raw/doc",
+    "raw/New folder",
+    "raw",
+    "New folder"
+  ]
+}
