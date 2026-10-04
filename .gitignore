@@ -61,9 +61,12 @@ tools/luban/*
 # Luban C# output (tools/gen.ps1)
 src/ProjectF.Tables/Gen/*
 !src/ProjectF.Tables/Gen/.gitkeep
-# Luban binary tables (tools/gen.ps1)
-UnityProject/Assets/StreamingAssets/Tables/*
-!UnityProject/Assets/StreamingAssets/Tables/.gitkeep
+# Luban binary tables (tools/gen.ps1, copied into StreamingAssets by tools/sync-dlls.ps1)
+# The folder name is ProjectSpyTables, not Tables: it is what Presentation's TableService
+# looks for, and the two had drifted, so the ignore rule was covering a folder nothing
+# wrote to while the binaries it was meant to exclude sat untracked in the tree.
+UnityProject/Assets/StreamingAssets/ProjectSpyTables/*
+!UnityProject/Assets/StreamingAssets/ProjectSpyTables/.gitkeep
 # sync-dlls.ps1 output (netstandard2.1 DLLs for Unity)
 UnityProject/Assets/Plugins/ProjectSpy/*
 !UnityProject/Assets/Plugins/ProjectSpy/.gitkeep

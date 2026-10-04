@@ -41,8 +41,8 @@ namespace ProjectSpy.Unity.Site
     public static class SiteAssembler
     {
         /// <summary>
-        /// Where the camera stands relative to a building: behind the front, looking at the
-        /// back wall, offset along Z.
+        /// Where the camera stands relative to a building: in front of the open face,
+        /// looking back at the back wall.
         /// </summary>
         /// <remarks>
         /// The camera is on the +Z side and the back wall is at negative Z, so the front of
@@ -69,6 +69,87 @@ namespace ProjectSpy.Unity.Site
             /// <summary>Each connection's transform, keyed by Core connection id.</summary>
             public IReadOnlyDictionary<SiteConnectionId, Transform> ConnectionTransforms { get; init; } =
                 new Dictionary<SiteConnectionId, Transform>();
+
+            /// <summary>
+            /// Each floor's root transform, keyed by Core floor index.
+            /// </summary>
+            /// <remarks>
+            /// Stage 9a's culling works by switching whole floors on and off, so it needs
+            /// the floor root rather than the fifty room transforms inside it. A floor root
+            /// is the one object the assembler knows is exactly "everything on this floor".
+            /// </remarks>
+            public IReadOnlyDictionary<int, Transform> FloorRoots { get; init; } =
+                new Dictionary<int, Transform>();
+
+            /// <summary>
+            /// Every room's renderers, split by what they are, keyed by Core room id.
+            /// </summary>
+            /// <remarks>
+            /// The split is not cosmetic. Fog of war hides a room's <em>contents</em> until
+            /// the team has seen the room — Core does not generate loot or props for an
+            /// unobserved room at all (rule 11), so drawing the marker box the generator
+            /// left behind would be drawing a fact that does not exist yet. Classifying by
+            /// "what built this" is therefore the honest test, and it has to happen here,
+            /// where the decision of what is a wall and what is a guard is actually made.
+            /// </remarks>
+            public IReadOnlyDictionary<SiteRoomId, RoomRenderers> RoomParts { get; init; } =
+                new Dictionary<SiteRoomId, RoomRenderers>();
+
+            /// <summary>
+            /// One room's renderers, grouped by the part they play in the cutaway.
+            /// </summary>
+            /// <remarks>
+            /// Arrays rather than lists because they are written once during assembly and
+            /// read every frame by the cutaway and fog controllers; a list would only invite
+            /// per-frame reallocation on the hot path.
+            /// </remarks>
+            public sealed class RoomRenderers
+            {
+                /// <summary>Floors, walls and partitions: the room's shell.</summary>
+                public Renderer[] Shell { get; internal set; } = System.Array.Empty<Renderer>();
+
+                /// <summary>The room's ceiling slab, which the cutaway fades out.</summary>
+                public Renderer[] Ceilings { get; internal set; } = System.Array.Empty<Renderer>();
+
+                /// <summary>
+                /// Guards, civilians, loot, terminals, light emitters and agents.
+                /// </summary>
+                /// <remarks>
+                /// Parented under the room root rather than under a separate site-wide
+                /// "Contents" object, so that hiding a room's contents is a matter of
+                /// switching off objects that already live inside it.
+                /// </remarks>
+                public Renderer[] Contents { get; internal set; } = System.Array.Empty<Renderer>();
+
+                /// <summary>
+                /// Grows while markers are placed, then frozen into <see cref="Contents"/>.
+                /// </summary>
+                /// <remarks>
+                /// Markers arrive from four separate loops and there is no reason to know
+                /// the count up front; the array exists only so that the per-frame
+                /// consumers cannot accidentally grow a shared collection.
+                /// </remarks>
+                internal List<Renderer> ContentsBuilder { get; } = new List<Renderer>();
+
+                /// <summary>Turns the builders into the arrays consumers read. Called once, at the end of assembly.</summary>
+                internal void Freeze()
+                {
+                    Contents = ContentsBuilder.ToArray();
+                }
+
+                /// <summary>Shell plus ceiling: everything that is the building.</summary>
+                public Renderer[] Structure => Shell.Length == 0 && Ceilings.Length == 0
+                    ? System.Array.Empty<Renderer>()
+                    : Concat(Shell, Ceilings);
+
+                private static Renderer[] Concat(Renderer[] a, Renderer[] b)
+                {
+                    var all = new Renderer[a.Length + b.Length];
+                    a.CopyTo(all, 0);
+                    b.CopyTo(all, a.Length);
+                    return all;
+                }
+            }
 
             /// <summary>Total building extent along X, in metres.</summary>
             public float WidthMetres { get; init; }
@@ -107,9 +188,18 @@ namespace ProjectSpy.Unity.Site
                 float cx = WidthMetres * 0.5f;
                 float cy = HeightMetres * 0.5f;
                 go.transform.position = new Vector3(cx, cy + CameraHeightMetres * 0.25f, CameraDistanceMetres);
-                go.transform.rotation = Quaternion.Euler(6f, 0f, 0f);
+
+                // Yawed 180°. The building is built around z = 0 and extends towards
+                // negative Z, and the camera stands at +CameraDistanceMetres, so a
+                // camera with no yaw looks away from the building and renders the empty
+                // space behind it. Nothing in a screenshot says "the camera is facing the
+                // wrong way" — it just looks like a site that generated no geometry.
+                go.transform.rotation = Quaternion.Euler(CameraPitchDegrees, 180f, 0f);
                 return camera;
             }
+
+            /// <summary>Downward tilt of the cutaway camera, in degrees.</summary>
+            public const float CameraPitchDegrees = 6f;
         }
 
         /// <summary>
@@ -130,6 +220,8 @@ namespace ProjectSpy.Unity.Site
             var warnings = new List<string>();
             var roomTransforms = new Dictionary<SiteRoomId, Transform>();
             var connectionTransforms = new Dictionary<SiteConnectionId, Transform>();
+            var floorRoots = new Dictionary<int, Transform>();
+            var roomParts = new Dictionary<SiteRoomId, Result.RoomRenderers>();
 
             // Walls between horizontally adjacent rooms are emitted once per boundary and
             // punched through wherever a door stands, rather than emitting a wall per room
@@ -143,13 +235,20 @@ namespace ProjectSpy.Unity.Site
                 regionRoot.transform.SetParent(root.transform, false);
 
                 foreach (SiteFloor floor in region.Floors)
-                    BuildFloor(layout, floor, regionRoot.transform, origin, openings, roomTransforms, warnings);
+                    BuildFloor(layout, floor, regionRoot.transform, origin, openings, roomTransforms,
+                        roomParts, floorRoots, warnings);
 
                 foreach (SiteConnection connection in region.Connections)
                     BuildConnection(layout, connection, regionRoot.transform, origin, connectionTransforms);
             }
 
-            BuildContents(layout, root.transform, origin, roomTransforms, warnings);
+            BuildContents(layout, root.transform, origin, roomTransforms, roomParts);
+
+            // Every room now knows its shell, its ceiling and its contents. Freezing here
+            // rather than in the room loop is what lets BuildContents append to the
+            // builders without the arrays being rebuilt once per marker.
+            foreach (Result.RoomRenderers built in roomParts.Values)
+                built.Freeze();
 
             float width = 0f;
             foreach (SiteFloor floor in layout.Floors)
@@ -162,6 +261,8 @@ namespace ProjectSpy.Unity.Site
                 Root = root,
                 RoomTransforms = roomTransforms,
                 ConnectionTransforms = connectionTransforms,
+                FloorRoots = floorRoots,
+                RoomParts = roomParts,
                 WidthMetres = width,
                 HeightMetres = floorCount * LaneUnits.StoreyHeightMetres,
                 Warnings = warnings,
@@ -219,10 +320,18 @@ namespace ProjectSpy.Unity.Site
             Vector3 origin,
             Dictionary<int, List<int>> openings,
             Dictionary<SiteRoomId, Transform> roomTransforms,
+            Dictionary<SiteRoomId, Result.RoomRenderers> roomParts,
+            Dictionary<int, Transform> floorRoots,
             List<string> warnings)
         {
             var floorRoot = new GameObject($"Floor_{floor.Index}_{floor.Kind}");
             floorRoot.transform.SetParent(parent, false);
+
+            // One floor root per floor index even when a layout has regions, so the
+            // cutaway's "switch this whole storey" is a single SetActive regardless of
+            // which region built it.
+            if (!floorRoots.ContainsKey(floor.Index))
+                floorRoots[floor.Index] = floorRoot.transform;
 
             float baseY = LaneUnits.ToWorldY(floor.Index, origin.y);
             float depth = LaneUnits.RoomDepthMetres;
@@ -251,21 +360,27 @@ namespace ProjectSpy.Unity.Site
                 roomRoot.transform.position = new Vector3(centreX, baseY, 0f);
                 roomTransforms[room.Id] = roomRoot.transform;
 
+                var parts = new Result.RoomRenderers();
+                roomParts[room.Id] = parts;
+
+                var shell = new List<Renderer>();
+                var ceilings = new List<Renderer>();
+
                 // Floor slab.
-                Place(KitPiece.Floor, roomRoot.transform,
+                AddRenderer(shell, Place(KitPiece.Floor, roomRoot.transform,
                     new Vector3(centreX, baseY - LaneUnits.FloorThicknessMetres * 0.5f, -depth * 0.5f),
-                    new Vector3(width, LaneUnits.FloorThicknessMetres, depth));
+                    new Vector3(width, LaneUnits.FloorThicknessMetres, depth)));
 
                 // Ceiling slab, so an upper storey is visually separated from this one and
                 // an unobserved floor can be hidden without also hiding the one below.
-                Place(KitPiece.Ceiling, roomRoot.transform,
+                AddRenderer(ceilings, Place(KitPiece.Ceiling, roomRoot.transform,
                     new Vector3(centreX, baseY + LaneUnits.RoomHeightMetres + LaneUnits.FloorThicknessMetres * 0.5f, -depth * 0.5f),
-                    new Vector3(width, LaneUnits.FloorThicknessMetres, depth));
+                    new Vector3(width, LaneUnits.FloorThicknessMetres, depth)));
 
                 // Back wall, behind the play area. The front has no wall: that is the cutaway.
-                Place(KitPiece.BackWall, roomRoot.transform,
+                AddRenderer(shell, Place(KitPiece.BackWall, roomRoot.transform,
                     new Vector3(centreX, baseY + LaneUnits.RoomHeightMetres * 0.5f, -depth),
-                    new Vector3(width, LaneUnits.RoomHeightMetres, LaneUnits.WallThicknessMetres));
+                    new Vector3(width, LaneUnits.RoomHeightMetres, LaneUnits.WallThicknessMetres)));
 
                 // Side walls, only on the building's real ends of each floor.
                 bool isLeftmost = IsLeftmostOn(floor, room);
@@ -273,16 +388,16 @@ namespace ProjectSpy.Unity.Site
 
                 if (isLeftmost)
                 {
-                    Place(KitPiece.SideWall, roomRoot.transform,
+                    AddRenderer(shell, Place(KitPiece.SideWall, roomRoot.transform,
                         new Vector3(origin.x + LaneUnits.ToMetres(startX), baseY + LaneUnits.RoomHeightMetres * 0.5f, -depth * 0.5f),
-                        new Vector3(LaneUnits.ExteriorWallThicknessMetres, LaneUnits.RoomHeightMetres, depth));
+                        new Vector3(LaneUnits.ExteriorWallThicknessMetres, LaneUnits.RoomHeightMetres, depth)));
                 }
 
                 if (isRightmost)
                 {
-                    Place(KitPiece.SideWall, roomRoot.transform,
+                    AddRenderer(shell, Place(KitPiece.SideWall, roomRoot.transform,
                         new Vector3(origin.x + LaneUnits.ToMetres(endX), baseY + LaneUnits.RoomHeightMetres * 0.5f, -depth * 0.5f),
-                        new Vector3(LaneUnits.ExteriorWallThicknessMetres, LaneUnits.RoomHeightMetres, depth));
+                        new Vector3(LaneUnits.ExteriorWallThicknessMetres, LaneUnits.RoomHeightMetres, depth)));
                 }
 
                 // Interior partition to the right, split around any door standing on it.
@@ -290,8 +405,11 @@ namespace ProjectSpy.Unity.Site
                 {
                     BuildPartition(
                         roomRoot.transform, floor.Index, origin.x + LaneUnits.ToMetres(endX),
-                        baseY, depth, openings);
+                        baseY, depth, openings, shell);
                 }
+
+                parts.Shell = shell.ToArray();
+                parts.Ceilings = ceilings.ToArray();
             }
         }
 
@@ -312,7 +430,7 @@ namespace ProjectSpy.Unity.Site
         /// </remarks>
         private static void BuildPartition(
             Transform parent, int floorIndex, float wallX, float baseY, float depth,
-            Dictionary<int, List<int>> openings)
+            Dictionary<int, List<int>> openings, List<Renderer> shell)
         {
             openings.TryGetValue(floorIndex, out List<int> xsOnFloor);
 
@@ -362,30 +480,49 @@ namespace ProjectSpy.Unity.Site
             foreach (var hole in merged)
             {
                 if (hole.left > cursor)
-                    EmitWall(parent, (cursor + hole.left) * 0.5f, baseY, wallHeight, wallThickness, depth);
+                    AddRenderer(shell, EmitWall(parent, (cursor + hole.left) * 0.5f, baseY, wallHeight, wallThickness, depth));
 
                 float lintelBottom = LaneUnits.DoorHeightMetres;
                 float lintelHeight = wallHeight - lintelBottom;
                 if (lintelHeight > 0.01f)
                 {
-                    EmitWall(parent, (hole.left + hole.right) * 0.5f,
+                    AddRenderer(shell, EmitWall(parent, (hole.left + hole.right) * 0.5f,
                         baseY + lintelBottom + lintelHeight * 0.5f,
-                        lintelHeight, wallThickness, depth);
+                        lintelHeight, wallThickness, depth));
                 }
 
                 cursor = hole.right;
             }
 
             if (floorMax > cursor)
-                EmitWall(parent, (cursor + floorMax) * 0.5f, baseY, wallHeight, wallThickness, depth);
+                AddRenderer(shell, EmitWall(parent, (cursor + floorMax) * 0.5f, baseY, wallHeight, wallThickness, depth));
         }
 
-        private static void EmitWall(
+        private static GameObject EmitWall(
             Transform parent, float centreX, float baseY, float height, float thickness, float depth)
         {
-            Place(KitPiece.BackWall, parent,
+            return Place(KitPiece.BackWall, parent,
                 new Vector3(centreX, baseY + height * 0.5f, -depth * 0.5f),
                 new Vector3(thickness, height, depth));
+        }
+
+        /// <summary>
+        /// Adds the renderers of a placed piece to a bucket.
+        /// </summary>
+        /// <remarks>
+        /// Nulls are skipped rather than added: a kit piece whose prefab has not been
+        /// generated still produces an object, but an object with no renderer is not a
+        /// thing the cutaway or the fog layer can do anything with, and letting a null
+        /// into the array would mean every consumer re-checking it.
+        /// </remarks>
+        private static void AddRenderer(List<Renderer> bucket, GameObject placed)
+        {
+            if (placed == null)
+                return;
+
+            Renderer renderer = placed.GetComponentInChildren<Renderer>();
+            if (renderer != null)
+                bucket.Add(renderer);
         }
 
         /// <summary>
@@ -470,59 +607,67 @@ namespace ProjectSpy.Unity.Site
         /// Lays in guards, civilians, terminals, loot and lights.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Everything here is placed in its room's lane position, which for a non-patrol NPC
         /// is the middle of the room: Core commits <em>which room</em> they are in but not
         /// exactly where on the floor, and inventing an exact X here would be Presentation
         /// asserting a simulation fact it was never told.
+        /// </para>
+        /// <para>
+        /// Markers are parented under their own room rather than under one site-wide
+        /// "Contents" object. The fog layer hides a room's contents until the team has seen
+        /// the room, and it can only do that if the contents are inside the room it is
+        /// hiding — which is also the honest arrangement, because a marker standing in a
+        /// room Core has never told the player about is a fact being drawn before it exists.
+        /// </para>
         /// </remarks>
         private static void BuildContents(
             SiteLayout layout,
             Transform root,
             Vector3 origin,
             Dictionary<SiteRoomId, Transform> roomTransforms,
-            List<string> warnings)
+            Dictionary<SiteRoomId, Result.RoomRenderers> roomParts)
         {
-            var contents = new GameObject("Contents");
-            contents.transform.SetParent(root, false);
-
             foreach (SiteGuard guard in layout.Guards)
-                PlaceMarker(contents.transform, MarkerKind.Guard, layout, guard.HomeRoomId,
-                    null, origin, roomTransforms, warnings);
+                PlaceMarker(MarkerKind.Guard, layout, guard.HomeRoomId,
+                    null, origin, roomTransforms, roomParts);
 
             foreach (SiteCivilian civilian in layout.Civilians)
-                PlaceMarker(contents.transform, MarkerKind.Civilian, layout, civilian.RoomId,
-                    null, origin, roomTransforms, warnings);
+                PlaceMarker(MarkerKind.Civilian, layout, civilian.RoomId,
+                    null, origin, roomTransforms, roomParts);
 
             foreach (SiteLight light in layout.Lights)
-                PlaceMarker(contents.transform, MarkerKind.Light, layout, light.RoomId,
-                    light.X.Raw, origin, roomTransforms, warnings);
+                PlaceMarker(MarkerKind.Light, layout, light.RoomId,
+                    light.X.Raw, origin, roomTransforms, roomParts);
 
             foreach (SiteInteractable interactable in layout.Interactables)
             {
                 var kind = interactable.Kind == CoreInteractableType.Terminal
                     ? MarkerKind.Terminal
                     : MarkerKind.Loot;
-                PlaceMarker(contents.transform, kind, layout, interactable.RoomId,
-                    interactable.X.Raw, origin, roomTransforms, warnings);
+                PlaceMarker(kind, layout, interactable.RoomId,
+                    interactable.X.Raw, origin, roomTransforms, roomParts);
             }
         }
 
         private static void PlaceMarker(
-            Transform parent,
             MarkerKind kind,
             SiteLayout layout,
             SiteRoomId roomId,
             int? exactXcm,
             Vector3 origin,
             Dictionary<SiteRoomId, Transform> roomTransforms,
-            List<string> warnings)
+            Dictionary<SiteRoomId, Result.RoomRenderers> roomParts)
         {
             if (!roomTransforms.TryGetValue(roomId, out Transform roomTransform))
             {
                 // A content item in a room the assembler skipped. Recorded, not thrown: the
-                // degenerate room is the real problem and it already warned.
+                // degenerate room is the real problem and it already warned at build time.
                 return;
             }
+
+            if (!roomParts.TryGetValue(roomId, out Result.RoomRenderers parts))
+                return;
 
             SiteRoom room = layout.Find(roomId);
             if (room is null)
@@ -553,12 +698,17 @@ namespace ProjectSpy.Unity.Site
             }
             else
             {
-                go = Object.Instantiate(prefab, parent);
+                go = Object.Instantiate(prefab, roomTransform);
                 go.name = $"M_{kind}_{roomId}";
             }
 
-            go.transform.SetParent(parent, false);
+            // worldPositionStays: the room root is already at the room's centre in world
+            // space, and the marker is positioned in world space below. Re-parenting with
+            // local coordinates would put every marker at its room's origin.
+            go.transform.SetParent(roomTransform, true);
             go.transform.position = new Vector3(x, y, -LaneUnits.RoomDepthMetres * 0.5f);
+
+            AddRenderer(parts.ContentsBuilder, go);
         }
 
         /// <summary>

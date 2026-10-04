@@ -6,6 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 8c9cfa26abfee488c85f1582747f6a02
+    path: Assets/ProjectSpy/Scenes/Boot.unity
+    guid: 07a906f2d547d72499af4b17179e2cb5
+  - enabled: 1
+    path: Assets/ProjectSpy/Scenes/Base.unity
+    guid: 09404752cb9fc814d966eb0c937de0b9
+  - enabled: 1
+    path: Assets/ProjectSpy/Scenes/Tactical.unity
+    guid: 6df38fc02cc655049b13e08288f92706
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

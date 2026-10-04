@@ -97,11 +97,47 @@ namespace ProjectSpy.Unity.Boot
             Input = Container.Resolve<InputService>();
             Simulation = Container.Resolve<SimulationRunner>();
 
+            LoadTables();
+
             Loaded = true;
         }
 
         /// <summary>True once every service has been resolved.</summary>
         public bool Loaded { get; private set; }
+
+        /// <summary>
+        /// Loads the compiled balance tables into Core.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This is boot's job and not a caller's, because Core's own lazy table search
+        /// cannot work inside Unity: it walks up from <c>AppContext.BaseDirectory</c>, which
+        /// is the Editor <em>install</em> directory rather than this repository, so it always
+        /// fails and every balance rule quietly falls back to its documented default. A
+        /// Unity build missing this line runs a game that looks entirely correct and ignores
+        /// every number in <c>data/*.csv</c> — which is the most expensive kind of bug there
+        /// is, because nothing is broken and everything is wrong.
+        /// </para>
+        /// <para>
+        /// A failure here is logged rather than thrown. The game is still playable on
+        /// fallback numbers, and a boot that refuses to start is a harder problem to
+        /// diagnose than one that says exactly which files it could not find.
+        /// </para>
+        /// </remarks>
+        private void LoadTables()
+        {
+            try
+            {
+                Tables.Load();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError(
+                    "[ProjectSpy] Could not load the compiled balance tables. The game is now " +
+                    "running on Core's documented fallback numbers, which is not the same " +
+                    $"game. Run 'pwsh tools/sync-dlls.ps1'. ({ex.Message})");
+            }
+        }
     }
 
     /// <summary>Shared filesystem locations, named in one place.</summary>

@@ -100,6 +100,16 @@ $Projects = @(
 )
 $TargetDir = Join-Path $UnityProjectDir 'Assets/Plugins/ProjectSpy'
 
+# The compiled table binaries. Core's own lazy loader walks up from
+# AppContext.BaseDirectory looking for assets/data/tables, which inside Unity is the
+# Editor install directory rather than this repository, so that search always fails and
+# every balance rule quietly falls back to its documented default. The Unity-side
+# TableService therefore resolves them from StreamingAssets instead, which means they
+# have to be put there. Leaving this to a manual step is what let a Unity build run on
+# fallback numbers while looking perfectly healthy.
+$TablesSourceDir = Join-Path $RepoRoot 'assets/data/tables'
+$TablesTargetDir = Join-Path $UnityProjectDir 'Assets/StreamingAssets/ProjectSpyTables'
+
 function Write-Step { param([string] $Message) Write-Host "==> $Message" -ForegroundColor Cyan }
 function Write-Ok   { param([string] $Message) Write-Host "    [ok]   $Message" -ForegroundColor Green }
 function Write-Skip { param([string] $Message) Write-Host "    [skip] $Message" -ForegroundColor DarkGray }
@@ -329,6 +339,40 @@ try {
                 Write-Ok "removed stale $($file.Name).meta"
             }
         }
+    }
+
+    Write-Host ''
+    Write-Step 'Syncing compiled table binaries'
+
+    if (-not (Test-Path -LiteralPath $TablesSourceDir)) {
+        Write-Host "    ! No table binaries at $TablesSourceDir. Run 'pwsh tools/gen.ps1' first."
+        Write-Host '    ! A Unity build without them runs on Core''s documented fallback balance.'
+    }
+    elseif ($DryRun) {
+        $count = (Get-ChildItem -LiteralPath $TablesSourceDir -Filter '*.bytes').Count
+        Write-Host "    ~ $count .bytes would be copied to $TablesTargetDir"
+    }
+    else {
+        New-Item -ItemType Directory -Path $TablesTargetDir -Force | Out-Null
+
+        $expectedTables = New-Object System.Collections.Generic.HashSet[string] ([StringComparer]::OrdinalIgnoreCase)
+        foreach ($file in (Get-ChildItem -LiteralPath $TablesSourceDir -Filter '*.bytes')) {
+            $expectedTables.Add($file.Name) | Out-Null
+            Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $TablesTargetDir $file.Name) -Force
+        }
+
+        # Remove binaries for tables that no longer exist, for the same reason stale DLLs
+        # are removed: an orphaned .bytes is a table Unity will happily keep loading.
+        foreach ($file in (Get-ChildItem -LiteralPath $TablesTargetDir -Filter '*.bytes' -ErrorAction SilentlyContinue)) {
+            if ($expectedTables.Contains($file.Name)) { continue }
+
+            Remove-Item -LiteralPath $file.FullName -Force
+            $meta = "$($file.FullName).meta"
+            if (Test-Path -LiteralPath $meta) { Remove-Item -LiteralPath $meta -Force }
+            Write-Ok "removed stale table $($file.Name)"
+        }
+
+        Write-Ok "$($expectedTables.Count) table binaries installed"
     }
 
     Write-Host ''

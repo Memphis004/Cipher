@@ -34,12 +34,16 @@ namespace ProjectSpy.Unity.Editor.Setup
         /// <returns>Paths written, in build order.</returns>
         public static IReadOnlyList<string> GenerateAll()
         {
-            var written = new List<string>
-            {
-                CreateBootScene(),
-                CreateEmptyScene("Base"),
-                CreateEmptyScene("Tactical"),
-            };
+            var tactical = TacticalSceneGenerator.Generate();
+            var boot = CreateBootScene();
+            var baseScene = CreateEmptyScene("Base");
+
+            // Written in build order, which is not the order they were generated: every
+            // generator opens its scene in Single mode, so whichever ran last is left
+            // open, and Boot has to be the launch scene rather than a mission. Generating
+            // Tactical first is what keeps Boot — the scene with content — from being
+            // wiped by the two empty scenes that follow it.
+            var written = new List<string> { boot, baseScene, tactical };
 
             WriteBuildSettings(written);
             return written;
