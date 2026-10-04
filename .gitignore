@@ -1,5 +1,5 @@
 # ============================================================
-# ProjectF — .NET + Unity (2026 rewrite; Unity project lives at
+# ProjectSpy — .NET + Unity (2026 rewrite; Unity project lives at
 # UnityProject/ at the repo root)
 # ============================================================
 
@@ -23,10 +23,9 @@ TestResults/
 .*.un~
 
 # Unity and IDEs emit *.sln / *.csproj next to their project folders.
-# Ignore those globally, then re-include ProjectF's own solution files.
+# Ignore those globally, then re-include ProjectSpy's own solution files.
 *.csproj
 *.sln
-!ProjectF.sln
 !src/**/*.csproj
 
 # Visual Studio / Rider / VS Code
@@ -66,8 +65,10 @@ src/ProjectF.Tables/Gen/*
 UnityProject/Assets/StreamingAssets/Tables/*
 !UnityProject/Assets/StreamingAssets/Tables/.gitkeep
 # sync-dlls.ps1 output (netstandard2.1 DLLs for Unity)
-UnityProject/Assets/Plugins/ProjectF/*
-!UnityProject/Assets/Plugins/ProjectF/.gitkeep
+UnityProject/Assets/Plugins/ProjectSpy/*
+!UnityProject/Assets/Plugins/ProjectSpy/.gitkeep
+# tools/verify_unity_compile.py scratch: response files and intermediate assemblies
+.unityverify/
 
 # ----- Obsidian vault (wikillm/) -----
 # Volatile workspace/cache state — regenerate themselves

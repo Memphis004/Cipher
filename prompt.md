@@ -634,7 +634,7 @@ Final report format
 ````text
 Stage 7 — Bring up the Unity project around the finished Core. 2.5D, URP 3D.
 
-1. Create unity/UnityProject on Unity 2022.3 LTS with URP (3D). Packages: VContainer, UniTask,
+1. Create UnityProject on Unity 6.3 LTS with URP (3D). Packages: VContainer, UniTask,
    R3, Cinemachine, Newtonsoft Json; reference Steamworks.NET without integrating it yet.
    Configure URP: forward+ renderer, shadows on for a single key light per room, SRP batcher on.
 
@@ -669,7 +669,7 @@ Stage 7 — Bring up the Unity project around the finished Core. 2.5D, URP 3D.
    Rendering interpolates entity transforms between steps; the simulation never interpolates.
    Pausing stops calling Advance; it must never change what Advance does.
 
-7. Update unity/SETUP.md so the remaining manual steps are at most three items.
+7. Update UnityProject/SETUP.md so the remaining manual steps are at most three items.
 ````
 
 ---

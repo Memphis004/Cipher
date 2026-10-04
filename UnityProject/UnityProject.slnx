@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="ProjectSpy.Unity.csproj" />
+  <Project Path="ProjectSpy.Unity.Editor.csproj" />
+  <Project Path="ProjectSpy.Unity.EditModeTests.csproj" />
+</Solution>

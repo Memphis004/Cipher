@@ -1,0 +1,28 @@
+{
+    "name": "ProjectSpy.Unity.EditModeTests",
+    "rootNamespace": "ProjectSpy.Unity.Tests",
+    "references": [
+        "ProjectSpy.Unity",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "ProjectSpy.Core.dll",
+        "ProjectSpy.Tables.dll",
+        "MessagePack.dll",
+        "MessagePack.Annotations.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

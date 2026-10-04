@@ -145,6 +145,35 @@ public static class SimulationRules
     /// </summary>
     public static bool AreTablesLoaded => TablesOrNull is not null;
 
+    /// <summary>
+    /// Supplies the tables explicitly, for a host that already has them loaded.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The lazy <see cref="TablesOrNull"/> search walks up from
+    /// <c>AppContext.BaseDirectory</c> looking for <c>assets/data/tables</c>. That works for
+    /// the console projects and the tests, and it is the right default. It does not work
+    /// inside Unity: there <c>AppContext.BaseDirectory</c> is the <b>Editor install
+    /// directory</b> (<c>C:\Program Files\Unity\Hub\Editor\&lt;version&gt;\Editor</c>), not the
+    /// project, so the search walks the Unity installation and finds nothing.
+    /// </para>
+    /// <para>
+    /// Left alone that failure is silent. Every accessor degrades to a documented default,
+    /// so a Unity build would have run the entire game on fallback numbers — a balance table
+    /// change simply not applying, with no error anywhere. This method is the way out:
+    /// Unity's <c>TableService</c> loads the binaries from StreamingAssets and hands them
+    /// here, and the same bytes are used either way.
+    /// </para>
+    /// <para>
+    /// Idempotent and last-call-wins, so a host may re-supply after a hot reload.
+    /// </para>
+    /// </remarks>
+    /// <param name="tables">The loaded tables, or null to go back to searching.</param>
+    public static void UseTables(GameTables? tables)
+    {
+        _tables = tables;
+    }
+
     /// <summary>Highest agent level. Structural (it bounds the level curve).</summary>
     public static int MaxLevel
     {

@@ -1,0 +1,35 @@
+{
+    "name": "ProjectSpy.Unity.Editor",
+    "rootNamespace": "ProjectSpy.Unity.Editor",
+    "references": [
+        "ProjectSpy.Unity",
+        "VContainer",
+        "VContainer.Unity",
+        "UniTask",
+        "R3.Unity",
+        "Unity.InputSystem",
+        "Unity.Cinemachine",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.TextMeshPro",
+        "Unity.RenderPipelines.Core.Runtime",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "ProjectSpy.Core.dll",
+        "ProjectSpy.Tables.dll",
+        "MessagePack.dll",
+        "MessagePack.Annotations.dll",
+        "Microsoft.NET.StringTools.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
