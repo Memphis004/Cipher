@@ -30,6 +30,12 @@ namespace ProjectSpy.Unity.Audio
     public sealed class AudioService : Services.IProjectSpyService, System.IDisposable
     {
         private readonly Stack<AudioSource> _pool = new();
+
+        /// <summary>The scene's listener, found once or added once.</summary>
+        private AudioListener _listener;
+
+        /// <summary>Whether this service added the listener and therefore owns it.</summary>
+        private bool _ownsListener;
         private readonly List<AudioSource> _active = new();
         private readonly Dictionary<string, AudioClip> _clips = new();
         private readonly HashSet<string> _reportedMissing = new();
@@ -135,8 +141,36 @@ namespace ProjectSpy.Unity.Audio
             var source = go.AddComponent<AudioSource>();
             source.playOnAwake = false;
             source.spatialBlend = 0f; // everything is 2.5D, heard through the cutaway.
+            EnsureListener();
             _active.Add(source);
             return source;
+        }
+
+        /// <summary>
+        /// Makes sure the scene has exactly one <c>AudioListener</c>, adding one if it has
+        /// none.
+        /// </summary>
+        /// <remarks>
+        /// This service owns the audio, so it owns the listener too. Creating sources
+        /// without one meant Unity logged "there are no audio listeners in the scene" every
+        /// time a pool grew, which is a warning per source in a subsystem whose entire
+        /// point is that a mission produces a great many short sounds. Added to the
+        /// service's own object rather than to the camera because the tactical camera is
+        /// rebuilt by the cutaway rig and a listener parented to it would go with it.
+        /// </remarks>
+        private void EnsureListener()
+        {
+            if (_listener != null)
+                return;
+
+            _listener = UnityEngine.Object.FindAnyObjectByType<AudioListener>();
+
+            if (_listener == null)
+            {
+                var go = new GameObject("AudioListener");
+                _listener = go.AddComponent<AudioListener>();
+                _ownsListener = true;
+            }
         }
 
         private void Release(AudioSource source)
@@ -155,6 +189,15 @@ namespace ProjectSpy.Unity.Audio
         public void Dispose()
         {
             StopAll();
+
+            // Only a listener this service added. One that was already in the scene
+            // belongs to whatever put it there, and disposing an audio service must not
+            // take the rest of the scene's audio down with it.
+            if (_ownsListener && _listener != null)
+                Object.Destroy(_listener.gameObject);
+
+            _listener = null;
+            _ownsListener = false;
 
             foreach (var source in _pool)
             {

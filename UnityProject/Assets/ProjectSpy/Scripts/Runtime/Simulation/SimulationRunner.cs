@@ -164,14 +164,26 @@ namespace ProjectSpy.Unity.Simulation
         {
             _unitsAdvancedLastFrame = 0;
 
+            // No session yet: either Start has not run, or a domain reload left this
+            // component behind without its session. Dereferencing through it threw a
+            // NullReferenceException on every frame, which grew Editor.log by megabytes a
+            // minute and buried every real error in the noise — the same failure as asking
+            // a finished mission to keep stepping, one level further out. A runner with
+            // nothing to advance does nothing at all.
+            //
+            // Only _session is checked. GameSession's constructor rejects a null world, so
+            // a session that exists always has one, and guarding it anyway would hide a
+            // real construction bug behind a silent return.
+            if (_session is null)
+                return;
+
             // Real seconds since the previous frame. Unscaled, because the simulation has
             // its own pause and must not inherit Unity's.
             float realSeconds = Time.unscaledDeltaTime;
 
             // A mission that has ended has nothing left to simulate, and Core says so by
             // throwing from every Advance. Asking anyway turned one finished mission into
-            // an exception per frame for as long as the scene stayed open — hundreds of
-            // them within seconds — which buries any real error in the noise. The end of a
+            // an exception per frame for as long as the scene stayed open. The end of a
             // mission is a state, not a fault, so the runner stops asking and holds the
             // last rendered frame until something restarts it.
             if (_session.Mode == SessionMode.Tactical
