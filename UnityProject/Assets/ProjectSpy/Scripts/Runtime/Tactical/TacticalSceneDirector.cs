@@ -3,6 +3,7 @@ using ProjectSpy.Core;
 using ProjectSpy.Core.Missions;
 using ProjectSpy.Core.Squad;
 using ProjectSpy.Core.Tactical;
+using ProjectSpy.Unity.Audio;
 using ProjectSpy.Unity.Localisation;
 using ProjectSpy.Unity.Persistence;
 using ProjectSpy.Unity.Simulation;
@@ -81,6 +82,11 @@ namespace ProjectSpy.Unity.Tactical
         private LightingDirector _lights;
         private CutawayCameraRig _rig;
         private TacticalHud _hud;
+        private AlarmDirector _alarm;
+        private AudioService _audio;
+        private AfterActionView _debrief;
+        private SquadComposition _composition;
+        private bool _debriefShown;
 
         private readonly Dictionary<TacticalActorId, AgentLightView> _actorViews = new();
         private readonly List<AgentLightView> _allViews = new();
@@ -126,11 +132,21 @@ namespace ProjectSpy.Unity.Tactical
 
         private void LateUpdate()
         {
-            if (_mission is null || _mission.IsOver)
+            if (_mission is null)
                 return;
+
+            // The debrief is the first thing that happens when a mission ends, and it is
+            // checked before the early-out below because that returns on IsOver and would
+            // otherwise skip the debrief forever.
+            if (_mission.IsOver)
+            {
+                ShowDebriefOnce();
+                return;
+            }
 
             ObserveControlledAgent();
             _lights.Sync();
+            _alarm?.Sync(_mission.Alarm.Band);
 
             PlaceActors();
             foreach (AgentLightView view in _allViews)
@@ -196,6 +212,7 @@ namespace ProjectSpy.Unity.Tactical
             }
 
             SquadComposition composition = BuildComposition(squad);
+            _composition = composition;
 
             if (!SquadDeployment.TryDispatch(
                     _session.World, composition, _missionId, layout, squad[0].Id, false,
@@ -405,9 +422,82 @@ namespace ProjectSpy.Unity.Tactical
             _hud.Build(_localization.Get);
             _hud.SetLanguage(_language);
 
+            BuildAlarm();
+
+            var debriefGo = new GameObject("AfterAction");
+            debriefGo.transform.SetParent(transform, false);
+
+            _debrief = debriefGo.AddComponent<AfterActionView>();
+            ReportStrings.Register(_localization);
+            _debrief.Build(_localization);
+
             // One first pass of the cutaway, so the very first rendered frame is already
             // correct rather than showing a building with every ceiling on.
             _view.ApplyCamera(_rig.Camera, LaneUnits.StoreyHeightMetres);
+        }
+
+        /// <summary>
+        /// Builds the audio service and the alarm presentation on top of it.
+        /// </summary>
+        /// <remarks>
+        /// The scene makes its own <c>AudioService</c> rather than resolving one from the
+        /// root scope, for the same reason it builds its own localization fallback: this
+        /// scene runs standalone, and taking a dependency on a container that may not have
+        /// booted would make the tactical view the one part of the game that cannot be
+        /// opened on its own. The catalogue is loaded up front so that no <c>Resources</c>
+        /// read ever happens in the frame a guard first spots the player.
+        /// </remarks>
+        /// <summary>
+        /// Shows the debrief, once, when the mission has ended.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Guarded rather than done inline in <c>LateUpdate</c> because IsOver stays true
+        /// for every frame after the mission ends. Without the latch the report would be
+        /// rebuilt — and the whole floor diagram re-instantiated — sixty times a second
+        /// until the player closed the screen.
+        /// </para>
+        /// <para>
+        /// The report is Core's, built by <c>MissionReportBuilder</c> from state the
+        /// simulation already wrote. Nothing here is calculated for the debrief.
+        /// </para>
+        /// </remarks>
+        private void ShowDebriefOnce()
+        {
+            if (_debriefShown || _debrief is null || _mission is null || _composition is null)
+                return;
+
+            _debriefShown = true;
+
+            try
+            {
+                var report = ProjectSpy.Core.Squad.MissionReportBuilder.Build(
+                    _mission,
+                    _composition,
+                    _mission.ObjectiveOutcome,
+                    _mission.CommandPost);
+
+                _debrief.Show(report, _mission.Layout);
+            }
+            catch (System.Exception problem)
+            {
+                // A debrief that throws would leave the player staring at the last frame of
+                // a finished mission with no explanation. Losing the debrief is bad;
+                // crashing the tactical scene over it is worse.
+                Debug.LogError($"[ProjectSpy] Could not build the after-action report: {problem}");
+            }
+        }
+
+        private void BuildAlarm()
+        {
+            _audio = new AudioService();
+            AudioCueLibrary.LoadOrReport(_audio);
+
+            var alarmGo = new GameObject("Alarm");
+            alarmGo.transform.SetParent(transform, false);
+
+            _alarm = alarmGo.AddComponent<AlarmDirector>();
+            _alarm.Build(_localization, _lights, _audio);
         }
 
         /// <summary>

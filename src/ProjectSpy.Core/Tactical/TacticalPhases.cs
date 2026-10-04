@@ -88,6 +88,12 @@ public static class TacticalPhases
         {
             IReadOnlyList<NoiseEvent> made = MovementSystem.Advance(context.State);
 
+            // After the move, so a room is recorded when it is entered rather than when
+            // the operative was standing in it before the step. This is the phase the
+            // route has to be sampled in: any later and it would miss a room somebody
+            // walked through and stopped in, which is most of a careful approach.
+            context.State.RecordRouteStep(context.State.Layout);
+
             // The noises were already appended to NoiseInFlight by MovementSystem; this
             // only reports how many, because they are propagated in the next phase and
             // appending them here too would double them.

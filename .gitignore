@@ -83,5 +83,13 @@ wikillm/.smart-env/
 wikillm/.obsidian/plugins/*/main.js
 wikillm/.obsidian/plugins/*/main.js.map
 
+# ----- Generated audio placeholders -----
+# Silent WAVs produced by ProjectSpy > Audio > Generate Placeholder Clips. They are
+# derived, deterministic and about 1.4MB of silence, so they belong to the generator
+# rather than to the repository. The generator never overwrites an existing file, so a
+# real authored clip that has replaced a placeholder stays tracked once someone un-ignores
+# it by hand.
+UnityProject/Assets/ProjectSpy/Resources/Audio/Clips/*.wav
+
 # ----- Misc -----
 .DS_Store

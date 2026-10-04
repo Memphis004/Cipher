@@ -184,6 +184,16 @@ public sealed class MissionReport
     /// <summary>The mission log, in order. Every entry is a localization key and args.</summary>
     public IReadOnlyList<MissionLogEntry> Timeline { get; init; } = Array.Empty<MissionLogEntry>();
 
+    /// <summary>
+    /// Which rooms each operative walked through, in order.
+    /// </summary>
+    /// <remarks>
+    /// Empty rather than null for a mission that recorded none, and the debrief draws an
+    /// empty route rather than guessing one. Room-to-room, because that is the precision
+    /// the simulation actually has — see <see cref="RouteStep"/>.
+    /// </remarks>
+    public IReadOnlyList<RouteStep> Routes { get; init; } = Array.Empty<RouteStep>();
+
     /// <summary>The orders the mission accepted, in order.</summary>
     public IReadOnlyList<AcceptedOrder> Orders { get; init; } = Array.Empty<AcceptedOrder>();
 
@@ -305,6 +315,7 @@ public static class MissionReportBuilder
             Aborted = state.Outcome == TacticalOutcome.Aborted,
             CommandPostCompromised = post is not null && post.IsCompromised,
             Timeline = state.Log.ToArray(),
+            Routes = state.RouteLog.ToArray(),
             Orders = state.OrderLog.ToArray(),
             Noises = state.NoiseLog.ToArray(),
             Perceptions = perceptions ?? Array.Empty<PerceptionRecord>(),

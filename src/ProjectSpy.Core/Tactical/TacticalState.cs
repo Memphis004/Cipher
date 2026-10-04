@@ -512,6 +512,19 @@ public sealed class TacticalState
     /// <summary>What has happened, for the debrief and the in-mission log.</summary>
     public List<MissionLogEntry> Log { get; } = new();
 
+    /// <summary>
+    /// Which rooms each operative walked through, in order.
+    /// </summary>
+    /// <remarks>
+    /// Only the squad is recorded. Guards are not on the debrief's floor diagram and a
+    /// thirty-guard site would otherwise add thousands of points to a log nobody reads;
+    /// the interesting route is the player's own.
+    /// </remarks>
+    public List<RouteStep> RouteLog { get; } = new();
+
+    /// <summary>The last room each operative was seen in, keyed by actor id.</summary>
+    private readonly Dictionary<int, SiteRoomId> _lastRoomByActor = new();
+
     // ---- indices -------------------------------------------------------------
 
     private Dictionary<int, TacticalActor>? _actorsById;
@@ -739,6 +752,41 @@ public sealed class TacticalState
     /// <summary>Appends to the mission log.</summary>
     public void Record(string key, params int[] args)
         => Log.Add(new MissionLogEntry(Step, key, args ?? Array.Empty<int>()));
+
+    /// <summary>
+    /// Appends a route entry for every operative who changed room this step.
+    /// </summary>
+    /// <remarks>
+    /// Called from the movement phase, once per step, after positions have resolved. A
+    /// room is recorded when it is entered rather than every step it is occupied, so an
+    /// operative standing still in a corridor for a minute contributes one point instead
+    /// of six hundred — the diagram draws a line either way, and the log stays readable.
+    /// </remarks>
+    public void RecordRouteStep(SiteLayout layout)
+    {
+        if (layout is null) throw new ArgumentNullException(nameof(layout));
+
+        foreach (TacticalActor actor in SortedActors)
+        {
+            if (!actor.IsAgent)
+                continue;
+
+            int id = actor.Id.Value;
+
+            // Unknown room means the operative is standing in a doorway or outside the
+            // building. Recording that would put a point on the diagram that belongs to no
+            // room at all, so a transition is only recorded once they are somewhere real.
+            SiteRoom? room = layout.RoomContaining(actor.Position);
+            if (room is null)
+                continue;
+
+            if (_lastRoomByActor.TryGetValue(id, out SiteRoomId previous) && previous == room.Id)
+                continue;
+
+            _lastRoomByActor[id] = room.Id;
+            RouteLog.Add(new RouteStep(Step, id, actor.AgentId, room.Id));
+        }
+    }
 
     /// <inheritdoc/>
     public override string ToString()

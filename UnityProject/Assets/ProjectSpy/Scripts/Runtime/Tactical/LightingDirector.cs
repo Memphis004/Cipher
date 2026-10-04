@@ -70,6 +70,12 @@ namespace ProjectSpy.Unity.Tactical
         private readonly Dictionary<int, Entry> _entries = new();
         private readonly List<int> _order = new();
 
+        /// <summary>The alarm band's colour, mixed over each light's own level colour.</summary>
+        private Color _alarmTint = Color.white;
+
+        /// <summary>How far <see cref="_alarmTint"/> is mixed in. Zero while Calm.</summary>
+        private float _alarmStrength;
+
         private LightState _lights;
         private SiteLayout _layout;
         private Vector3 _origin;
@@ -305,12 +311,49 @@ namespace ProjectSpy.Unity.Tactical
                 TintProxy(entry.ProxyRenderer, current);
         }
 
-        private static void ApplyLight(Light realtime, LightRuntime runtime)
+        private void ApplyLight(Light realtime, LightRuntime runtime)
         {
             realtime.enabled = runtime.IsWorking;
             realtime.range = LaneUnits.ToMetres(runtime.RadiusCm);
-            realtime.color = ColourForLevel[(int)runtime.Level];
+
+            // Base colour first, then the alarm tint over it. The base is Core's own
+            // light level, which is information — a Dim room under a red lockdown tint is
+            // still a Dim room — so the tint is mixed on top rather than replacing the
+            // colour, and strength is what says how hard.
+            Color baseColour = ColourForLevel[(int)runtime.Level];
+            realtime.color = Color.Lerp(baseColour, _alarmTint, _alarmStrength);
+
             realtime.intensity = IntensityForLevel[(int)runtime.Level] * realtime.range;
+        }
+
+        /// <summary>
+        /// Shifts every light in the building toward one colour.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This is how an alarm band reaches the screen: the building's own lights change
+        /// rather than a colour grade over the whole frame, so a room that has gone red is
+        /// a claim about the <em>site</em>. Grading the camera would tint the squad and the
+        /// fog the same way, which would read as the player being in trouble.
+        /// </para>
+        /// <para>
+        /// Stored and re-applied rather than written once, because every repaint puts the
+        /// base colour back and a tint that did not survive one would flicker the moment a
+        /// light was switched.
+        /// </para>
+        /// </remarks>
+        /// <param name="tint">The colour to shift toward.</param>
+        /// <param name="strength">How far to shift, 0 to 1.</param>
+        public void ApplyTint(Color tint, float strength)
+        {
+            _alarmTint = tint;
+            _alarmStrength = Mathf.Clamp01(strength);
+
+            foreach (Entry entry in _entries.Values)
+            {
+                if (entry.Realtime != null)
+                    ApplyLight(entry.Realtime, entry.Runtime);
+            }
         }
 
         /// <summary>

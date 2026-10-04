@@ -1,3 +1,5 @@
+using ProjectSpy.Core.Missions;
+
 namespace ProjectSpy.Core.Tactical;
 
 /// <summary>
@@ -386,6 +388,26 @@ public sealed record NoiseEvent(
 /// </param>
 /// <param name="DistanceCm">The distance the sound had travelled to reach them.</param>
 public readonly record struct NoiseHeard(int ActorId, int IntensityPercent, Fixed32 DistanceCm);
+
+/// <summary>
+/// One room an operative walked into, and when.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Room-to-room rather than per-centimetre positions, because that is what a floor
+/// diagram can honestly draw: a line between room centres, through the doors that were
+/// actually used. Sampling every actor's exact position would produce a scribble that
+/// implies a precision the debrief does not have, and would cost a point per actor per
+/// step for a picture nobody reads at that resolution.
+/// </para>
+/// <para>
+/// Recorded in Core rather than sampled by the view. A route sampled from the renderer
+/// would depend on frame rate, so the same mission replayed at a different frame rate
+/// would produce a different debrief — and a debrief that changes between two runs of the
+/// same seed is not evidence of anything.
+/// </para>
+/// </remarks>
+public readonly record struct RouteStep(long Step, int ActorId, AgentId Agent, SiteRoomId RoomId);
 
 /// <summary>Stable identifier for an actor inside a running mission.</summary>
 /// <remarks>
