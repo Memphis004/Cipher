@@ -497,3 +497,158 @@
 ,resolve.compromised,Compromised
 ,resolve.aborted,Aborted
 ,resolve.disaster,Disaster
+,ui.topbar.date,"Day {0}, Week {1}"
+,ui.weekday.0,Monday
+,ui.weekday.1,Tuesday
+,ui.weekday.2,Wednesday
+,ui.weekday.3,Thursday
+,ui.weekday.4,Friday
+,ui.weekday.5,Saturday
+,ui.weekday.6,Sunday
+,ui.speed.pause,Pause
+,ui.speed.normal,1x
+,ui.speed.fast,4x
+,ui.speed.faster,16x
+,ui.speed.fastest,64x
+,ui.key.pause,Pause (Space)
+,ui.key.speed_1,Speed 1 (1)
+,ui.key.speed_2,Speed 2 (2)
+,ui.key.speed_3,Speed 3 (3)
+,ui.key.speed_4,Speed 4 (4)
+,ui.key.speed_unknown,Unbound
+,topbar.delta.gain,profit
+,topbar.delta.loss,cost
+,heat.tier.0,Quiet
+,heat.tier.1,Watched
+,heat.tier.2,Notorious
+,heat.tier.3,Hunted
+,heat.tier.4,Crackdown
+,heat.tier.overflow,Beyond the charts
+,heat.tier.unknown,Unknown
+,class.unknown,Unclassified
+,agent.status.idle,Idle
+,agent.status.training,Training
+,agent.status.resting,Resting
+,agent.status.recovering,Recovering
+,agent.status.onmission,On mission
+,agent.status.captured,Captured
+,agent.status.dead,Dead
+,agent.status.retired,Retired
+,loyalty.band.devoted,Devoted
+,loyalty.band.content,Content
+,loyalty.band.uneasy,Uneasy
+,loyalty.band.resentful,Resentful
+,loyalty.mood.devoted,Would follow you anywhere.
+,loyalty.mood.content,Seems settled here.
+,loyalty.mood.uneasy,Keeps looking over their shoulder.
+,loyalty.mood.resentful,Has not forgiven you yet.
+,skill.name.infiltration,Infiltration
+,skill.name.combat,Combat
+,skill.name.tech,Technical
+,skill.name.social,Social
+,skill.name.nerve,Nerve
+,skill.term.base,Base
+,skill.term.training,Training
+,skill.term.trait_bonus,Trait bonus
+,skill.term.fatigue,Fatigue
+,build.ghost.valid,Can build here
+,build.error.generic,Cannot build here
+,build.error.layer_out_of_range,That depth does not exist.
+,build.error.slot_out_of_range,That space is outside the base.
+,build.error.slot_occupied,Something is already there.
+,build.error.no_slots,Choose at least one space.
+,build.error.unknown_room_type,That room type does not exist.
+,build.error.locked_by_story,You have not unlocked this yet.
+,build.error.layer_too_shallow,This room must go deeper than layer {0}.
+,build.error.unknown_neighbour,That neighbour does not exist.
+,build.error.neighbour_other_layer,That neighbour is on another floor.
+,build.error.insufficient_funds,Costs {0}. You have {1}.
+,build.cost,Cost
+,build.upkeep,Upkeep / week
+,build.depth_modifier,Depth modifier
+,difficulty.band.trivial,Trivial
+,difficulty.band.easy,Easy
+,difficulty.band.standard,Standard
+,difficulty.band.hard,Hard
+,difficulty.band.extreme,Extreme
+,difficulty.band.impossible,Impossible
+,difficulty.term.base,Base difficulty
+,difficulty.term.tier,Site tier
+,difficulty.term.guards,Guards
+,difficulty.term.security,Security grade
+,difficulty.term.no_forward_post,No forward post staffed
+,difficulty.term.no_squad,No squad selected
+,difficulty.term.skill.infiltration,Needs infiltration
+,difficulty.term.skill.combat,Needs combat
+,difficulty.term.skill.tech,Needs technical
+,difficulty.term.skill.social,Needs social
+,difficulty.term.skill.nerve,Needs nerve
+,difficulty.term.team.infiltration,Team infiltration
+,difficulty.term.team.combat,Team combat
+,difficulty.term.team.tech,Team technical
+,difficulty.term.team.social,Team social
+,difficulty.term.team.nerve,Team nerve
+,mission.readiness.too_few,Not enough agents selected.
+,mission.readiness.too_many,Too many agents selected.
+,mission.readiness.unknown_type,No mission type loaded.
+,mission.readiness.under_powered,Squad is under-powered for this site.
+,dispatch.refusal.squadtoosmall,Squad is too small.
+,dispatch.refusal.squadtoolarge,Squad is too large.
+,dispatch.refusal.unknownagent,That agent is not on the roster.
+,dispatch.refusal.agentnotdeployable,That agent cannot be deployed.
+,dispatch.refusal.physicalstaminatoolow,Physical stamina too low ({0}).
+,dispatch.refusal.mentalstaminatoolow,Mental stamina too low ({0}).
+,dispatch.refusal.injurytosevere,Injuries too severe ({0}).
+,dispatch.refusal.unknownrole,Unknown role ({0}).
+,dispatch.refusal.missingrequiredrole,Missing a required role.
+,sleeper.status.inserting,Inserting
+,sleeper.status.embedded,Embedded
+,sleeper.status.discovered,Discovered
+,sleeper.status.burned,Burned
+,sleeper.status.extracted,Extracted
+,sleeper.status.poisoned,Poisoned
+,sleeper.status.unreported,Running. Nothing to report.
+,intel.band.entranceonly,Entrance only
+,intel.band.layout,Rough layout
+,intel.band.typesandconnections,Types and connections
+,intel.band.details,Details
+,intel.band.complete,Complete
+,intel.floor.0,Ground floor
+,intel.floor.1,Floor 1
+,intel.floor.2,Floor 2
+,intel.floor.3,Floor 3
+,intel.floor.4,Floor 4
+,intel.floor.5,Floor 5
+,intel.floor.6,Floor 6
+,intel.floor.7,Floor 7
+,intel.floor.8,Floor 8
+,intel.floor.9,Floor 9
+,intel.unlock.entrance,Where the entrance is
+,intel.unlock.floor_count,How many floors
+,intel.unlock.room_placement,Where rooms sit
+,intel.unlock.room_types,Room types
+,intel.unlock.connections,Connections
+,intel.unlock.lock_states,Which doors are locked
+,intel.unlock.guard_counts,How many guards
+,intel.unlock.light_levels,Where it is lit
+,intel.unlock.patrol_routes,Patrol routes
+,intel.unlock.objective,Where the objective is
+,intel.unlock.extraction,Where the exit is
+,intel.unlock.holding_rooms,Where prisoners are held
+,intel.unlock.may_be_stale,This may no longer be true
+,contract.client,Client
+,contract.objective,Objective
+,contract.tier,Tier
+,contract.difficulty,Estimated difficulty
+,contract.reward,Reward
+,contract.heat_gain,Heat
+,contract.expiry,Expires
+,agent.detail.stats,Full stats
+,agent.detail.traits,Traits
+,agent.detail.timeline,Career
+,agent.detail.records,Mission record
+,agent.detail.salary,Salary
+,agent.detail.relationships,Relationships
+,agent.detail.none,No missions yet.
+,agent.stamina.physical,Physical
+,agent.stamina.mental,Mental

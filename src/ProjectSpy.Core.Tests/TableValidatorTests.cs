@@ -199,8 +199,31 @@ public class TableValidatorTests
                 .Concat(Validator.Tables.TbResolveRule.DataList.Select(x => x.NameKey)),
             StringComparer.Ordinal).Count;
 
-        Assert.Equal(referenced, validator.Thai.Count);
-        Assert.Equal(referenced, validator.English.Count);
+        // Stage 8 added a second class of key: strings the UI itself needs, which no
+        // table column references. The top bar's date line, the build panel's refusals,
+        // the intel band's unlock list. They are declared below rather than allowed to
+        // appear unannounced, because the point of this assertion was always to fail on a
+        // key nobody asked for — and a UI key nobody declared is exactly that.
+        //
+        // The relationship is therefore equality against the union, not against the
+        // table-derived set alone. Both original directions stay intact: a referenced key
+        // missing from the catalog still fails, and a catalog key with neither a table nor
+        // a declaration still fails.
+        int declared = StageEightUiKeys.Length;
+        Assert.Equal(referenced + declared, validator.Thai.Count);
+        Assert.Equal(referenced + declared, validator.English.Count);
+
+        // Every declared key must actually be present in both languages, so the list
+        // cannot rot into a comment that no longer describes the catalog.
+        foreach (string key in StageEightUiKeys)
+        {
+            Assert.True(
+                validator.Thai.Contains(key),
+                $"Declared UI key '{key}' is missing from the Thai catalog.");
+            Assert.True(
+                validator.English.Contains(key),
+                $"Declared UI key '{key}' is missing from the English catalog.");
+        }
 
         // A floor, not an exact count: it exists to catch a catalog that collapsed to
         // almost nothing while still matching the tables. Raised as content was added
@@ -254,4 +277,173 @@ public class TableValidatorTests
             TableService.IsAvailable(),
             "Table binaries not found. Run 'pwsh tools/gen.ps1'.");
     }
+
+    /// <summary>
+    /// Every localization key the stage-8 UI emits that no table column references.
+    /// </summary>
+    /// <remarks>
+    /// Listed explicitly rather than discovered. Discovery would mean scanning
+    /// Presentation source for string literals, which would let the test pass for any typo
+    /// that happened to look like a key — the exact opposite of what it is here to catch.
+    /// Declaring them means a key that is emitted but not listed here fails the count, and
+    /// a key listed here but absent from the catalog fails the containment check above.
+    /// </remarks>
+    private static readonly string[] StageEightUiKeys =
+    {
+            "agent.detail.none",
+            "agent.detail.records",
+            "agent.detail.relationships",
+            "agent.detail.salary",
+            "agent.detail.stats",
+            "agent.detail.timeline",
+            "agent.detail.traits",
+            "agent.stamina.mental",
+            "agent.stamina.physical",
+            "agent.status.captured",
+            "agent.status.dead",
+            "agent.status.idle",
+            "agent.status.onmission",
+            "agent.status.recovering",
+            "agent.status.resting",
+            "agent.status.retired",
+            "agent.status.training",
+            "build.cost",
+            "build.depth_modifier",
+            "build.error.generic",
+            "build.error.insufficient_funds",
+            "build.error.layer_out_of_range",
+            "build.error.layer_too_shallow",
+            "build.error.locked_by_story",
+            "build.error.neighbour_other_layer",
+            "build.error.no_slots",
+            "build.error.slot_occupied",
+            "build.error.slot_out_of_range",
+            "build.error.unknown_neighbour",
+            "build.error.unknown_room_type",
+            "build.ghost.valid",
+            "build.upkeep",
+            "class.unknown",
+            "contract.client",
+            "contract.difficulty",
+            "contract.expiry",
+            "contract.heat_gain",
+            "contract.objective",
+            "contract.reward",
+            "contract.tier",
+            "difficulty.band.easy",
+            "difficulty.band.extreme",
+            "difficulty.band.hard",
+            "difficulty.band.impossible",
+            "difficulty.band.standard",
+            "difficulty.band.trivial",
+            "difficulty.term.base",
+            "difficulty.term.guards",
+            "difficulty.term.no_forward_post",
+            "difficulty.term.no_squad",
+            "difficulty.term.security",
+            "difficulty.term.skill.combat",
+            "difficulty.term.skill.infiltration",
+            "difficulty.term.skill.nerve",
+            "difficulty.term.skill.social",
+            "difficulty.term.skill.tech",
+            "difficulty.term.team.combat",
+            "difficulty.term.team.infiltration",
+            "difficulty.term.team.nerve",
+            "difficulty.term.team.social",
+            "difficulty.term.team.tech",
+            "difficulty.term.tier",
+            "dispatch.refusal.agentnotdeployable",
+            "dispatch.refusal.injurytosevere",
+            "dispatch.refusal.mentalstaminatoolow",
+            "dispatch.refusal.missingrequiredrole",
+            "dispatch.refusal.physicalstaminatoolow",
+            "dispatch.refusal.squadtoolarge",
+            "dispatch.refusal.squadtoosmall",
+            "dispatch.refusal.unknownagent",
+            "dispatch.refusal.unknownrole",
+            "heat.tier.0",
+            "heat.tier.1",
+            "heat.tier.2",
+            "heat.tier.3",
+            "heat.tier.4",
+            "heat.tier.overflow",
+            "heat.tier.unknown",
+            "intel.band.complete",
+            "intel.band.details",
+            "intel.band.entranceonly",
+            "intel.band.layout",
+            "intel.band.typesandconnections",
+            "intel.floor.0",
+            "intel.floor.1",
+            "intel.floor.2",
+            "intel.floor.3",
+            "intel.floor.4",
+            "intel.floor.5",
+            "intel.floor.6",
+            "intel.floor.7",
+            "intel.floor.8",
+            "intel.floor.9",
+            "intel.unlock.connections",
+            "intel.unlock.entrance",
+            "intel.unlock.extraction",
+            "intel.unlock.floor_count",
+            "intel.unlock.guard_counts",
+            "intel.unlock.holding_rooms",
+            "intel.unlock.light_levels",
+            "intel.unlock.lock_states",
+            "intel.unlock.may_be_stale",
+            "intel.unlock.objective",
+            "intel.unlock.patrol_routes",
+            "intel.unlock.room_placement",
+            "intel.unlock.room_types",
+            "loyalty.band.content",
+            "loyalty.band.devoted",
+            "loyalty.band.resentful",
+            "loyalty.band.uneasy",
+            "loyalty.mood.content",
+            "loyalty.mood.devoted",
+            "loyalty.mood.resentful",
+            "loyalty.mood.uneasy",
+            "mission.readiness.too_few",
+            "mission.readiness.too_many",
+            "mission.readiness.under_powered",
+            "mission.readiness.unknown_type",
+            "skill.name.combat",
+            "skill.name.infiltration",
+            "skill.name.nerve",
+            "skill.name.social",
+            "skill.name.tech",
+            "skill.term.base",
+            "skill.term.fatigue",
+            "skill.term.training",
+            "skill.term.trait_bonus",
+            "sleeper.status.burned",
+            "sleeper.status.discovered",
+            "sleeper.status.embedded",
+            "sleeper.status.extracted",
+            "sleeper.status.inserting",
+            "sleeper.status.poisoned",
+            "sleeper.status.unreported",
+            "topbar.delta.gain",
+            "topbar.delta.loss",
+            "ui.key.pause",
+            "ui.key.speed_1",
+            "ui.key.speed_2",
+            "ui.key.speed_3",
+            "ui.key.speed_4",
+            "ui.key.speed_unknown",
+            "ui.speed.fast",
+            "ui.speed.faster",
+            "ui.speed.fastest",
+            "ui.speed.normal",
+            "ui.speed.pause",
+            "ui.topbar.date",
+            "ui.weekday.0",
+            "ui.weekday.1",
+            "ui.weekday.2",
+            "ui.weekday.3",
+            "ui.weekday.4",
+            "ui.weekday.5",
+            "ui.weekday.6",
+    };
 }

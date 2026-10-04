@@ -338,10 +338,16 @@ every element of each one rather than just the field being non-empty.
 These are **not** Luban tables — they are read directly by
 `LocalizationCatalog` so a translator can edit them without a codegen step.
 
-- 481 keys, identical sets in both files.
+- 652 keys, identical sets in both files.
 - Thai is the default language; `en` is a parallel column, not a fallback.
 - Every `name_key` and `desc_key` referenced by a table must exist in **both**
   files with non-empty text. The validator fails the build otherwise.
+- Keys referenced from C# (presenters, services, tooltip text) are not discoverable by
+  reflection over the table data, so they are declared by hand in
+  `TableValidatorTests.StageEightUiKeys`. The validator asserts
+  `table-referenced ∪ declared == actual keys` in both directions, so an orphan key fails
+  just as hard as a missing one. Adding a UI key means adding it to both CSVs **and** to
+  that list.
 
 `event.*` keys are the UI label for an event; `event.nar.*` keys are the
 after-action report line. They currently share wording but are separate keys so

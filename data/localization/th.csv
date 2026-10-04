@@ -497,3 +497,158 @@
 ,resolve.compromised,ถูกตรวจพบ
 ,resolve.aborted,ยกเลิกภารกิจ
 ,resolve.disaster,พินาศ
+,ui.topbar.date,วันที่ {0} สัปดาห์ที่ {1}
+,ui.weekday.0,วันจันทร์
+,ui.weekday.1,วันอังคาร
+,ui.weekday.2,วันพุธ
+,ui.weekday.3,วันพฤหัสบดี
+,ui.weekday.4,วันศุกร์
+,ui.weekday.5,วันเสาร์
+,ui.weekday.6,วันอาทิตย์
+,ui.speed.pause,หยุดชั่วคราว
+,ui.speed.normal,1 เท่า
+,ui.speed.fast,4 เท่า
+,ui.speed.faster,16 เท่า
+,ui.speed.fastest,64 เท่า
+,ui.key.pause,หยุดชั่วคราว (Space)
+,ui.key.speed_1,ความเร็ว 1 (1)
+,ui.key.speed_2,ความเร็ว 2 (2)
+,ui.key.speed_3,ความเร็ว 3 (3)
+,ui.key.speed_4,ความเร็ว 4 (4)
+,ui.key.speed_unknown,ไม่ได้ผูกปุ่ม
+,topbar.delta.gain,กำไร
+,topbar.delta.loss,ขาดทุน
+,heat.tier.0,เงียบสงบ
+,heat.tier.1,ถูกจับตา
+,heat.tier.2,มีชื่อเสียง
+,heat.tier.3,ถูกตามล่า
+,heat.tier.4,ถูกจับกุมอย่างหนัก
+,heat.tier.overflow,สูงกว่าที่บันทึกไว้
+,heat.tier.unknown,ไม่ทราบ
+,class.unknown,ไม่ระบุประเภท
+,agent.status.idle,ว่าง
+,agent.status.training,กำลังฝึก
+,agent.status.resting,กำลังพัก
+,agent.status.recovering,กำลังฟื้นตัว
+,agent.status.onmission,อยู่ในภารกิจ
+,agent.status.captured,ถูกจับ
+,agent.status.dead,เสียชีวิต
+,agent.status.retired,เกษียณ
+,loyalty.band.devoted,ภักดีอย่างสู้
+,loyalty.band.content,พอใจ
+,loyalty.band.uneasy,ไม่พอใจ
+,loyalty.band.resentful,อัดอั้น
+,loyalty.mood.devoted,พร้อมจะตามคุณไปทุกที่
+,loyalty.mood.content,ดูพอใจกับที่นี่
+,loyalty.mood.uneasy,มองไปรอบข้างบ่อย
+,loyalty.mood.resentful,ยังไม่ให้อภัยคุณ
+,skill.name.infiltration,การแทรกซึม
+,skill.name.combat,การต่อสู้
+,skill.name.tech,เทคนิค
+,skill.name.social,การสังคม
+,skill.name.nerve,ความกล้า
+,skill.term.base,ค่าพื้นฐาน
+,skill.term.training,การฝึก
+,skill.term.trait_bonus,โบนัสจากลักษณะ
+,skill.term.fatigue,ความอ่อนเพลีย
+,build.ghost.valid,สร้างได้ตรงนี้
+,build.error.generic,ไม่สามารถสร้างตรงนี้
+,build.error.layer_out_of_range,ไม่มีชั้นที่ระบุ
+,build.error.slot_out_of_range,พื้นที่นั้นอยู่นอกฐาน
+,build.error.slot_occupied,ตำแหน่งนี้มีของอยู่แล้ว
+,build.error.no_slots,เลือกพื้นที่อย่างน้อยหนึ่งช่อง
+,build.error.unknown_room_type,ไม่มีประเภทห้องนี้
+,build.error.locked_by_story,ยังไม่ได้ปลดล็อกสิ่งนี้
+,build.error.layer_too_shallow,ห้องนี้ต้องอยู่ลึกกว่าชั้นที่ {0}
+,build.error.unknown_neighbour,ไม่มีห้องข้างเคียงนั้น
+,build.error.neighbour_other_layer,ห้องข้างเคียงอยู่คนละชั้น
+,build.error.insufficient_funds,ราคา {0} แต่คุณมี {1}
+,build.cost,ราคา
+,build.upkeep,ค่าบำรุงต่อสัปดาห์
+,build.depth_modifier,ตัวคูณความลึก
+,difficulty.band.trivial,ง่ายมาก
+,difficulty.band.easy,ง่าย
+,difficulty.band.standard,ปกติ
+,difficulty.band.hard,ยาก
+,difficulty.band.extreme,ยากมาก
+,difficulty.band.impossible,เป็นไปไม่ได้
+,difficulty.term.base,ความยากพื้นฐาน
+,difficulty.term.tier,ระดับสถานที่
+,difficulty.term.guards,ผู้พิทักษ์
+,difficulty.term.security,ระดับความปลอดภัย
+,difficulty.term.no_forward_post,ไม่มีคนประจำจุดล่วงหน้า
+,difficulty.term.no_squad,ยังไม่ได้เลือกทีม
+,difficulty.term.skill.infiltration,ต้องการการแทรกซึม
+,difficulty.term.skill.combat,ต้องการการต่อสู้
+,difficulty.term.skill.tech,ต้องการทักษะเทคนิค
+,difficulty.term.skill.social,ต้องการทักษะการสังคม
+,difficulty.term.skill.nerve,ต้องการความกล้า
+,difficulty.term.team.infiltration,การแทรกซึมของทีม
+,difficulty.term.team.combat,การต่อสู้ของทีม
+,difficulty.term.team.tech,ทักษะเทคนิคของทีม
+,difficulty.term.team.social,ทักษะการสังคมของทีม
+,difficulty.term.team.nerve,ความกล้าของทีม
+,mission.readiness.too_few,เลือกชุดทีมไม่พอ
+,mission.readiness.too_many,เลือกชุดทีมมากเกินไป
+,mission.readiness.unknown_type,ไม่พบประเภทภารกิจ
+,mission.readiness.under_powered,ทีมนี้กำลังไม่พอสำหรับสถานที่แห่งนี้
+,dispatch.refusal.squadtoosmall,ทีมเล็กเกินไป
+,dispatch.refusal.squadtoolarge,ทีมใหญ่เกินไป
+,dispatch.refusal.unknownagent,ไม่พบเอเจนต์คนนี้ในทีม
+,dispatch.refusal.agentnotdeployable,เอเจนต์คนนี้ออกภารกิจไม่ได้
+,dispatch.refusal.physicalstaminatoolow,พลังกายต่ำเกินไป ({0})
+,dispatch.refusal.mentalstaminatoolow,พลังใจต่ำเกินไป ({0})
+,dispatch.refusal.injurytosevere,บาดเจ็บหนักเกินไป ({0})
+,dispatch.refusal.unknownrole,ไม่รู้จักบทบาท ({0})
+,dispatch.refusal.missingrequiredrole,ขาดตำแหน่งที่จำเป็น
+,sleeper.status.inserting,กำลังฝังตัว
+,sleeper.status.embedded,ฝังตัวแล้ว
+,sleeper.status.discovered,ถูกจับได้
+,sleeper.status.burned,เสียหาย
+,sleeper.status.extracted,กลับมาแล้ว
+,sleeper.status.poisoned,ถูกยักย้อน
+,sleeper.status.unreported,กำลังทำงาน ยังไม่มีข้อมูล
+,intel.band.entranceonly,รู้เฉพาะทางเข้า
+,intel.band.layout,ผังคร่าวๆ
+,intel.band.typesandconnections,ประเภทห้องและทางเชื่อม
+,intel.band.details,รายละเอียด
+,intel.band.complete,ครบถ้วน
+,intel.floor.0,ชั้นดิน
+,intel.floor.1,ชั้นที่ 1
+,intel.floor.2,ชั้นที่ 2
+,intel.floor.3,ชั้นที่ 3
+,intel.floor.4,ชั้นที่ 4
+,intel.floor.5,ชั้นที่ 5
+,intel.floor.6,ชั้นที่ 6
+,intel.floor.7,ชั้นที่ 7
+,intel.floor.8,ชั้นที่ 8
+,intel.floor.9,ชั้นที่ 9
+,intel.unlock.entrance,ตำแหน่งทางเข้า
+,intel.unlock.floor_count,จำนวนชั้น
+,intel.unlock.room_placement,ตำแหน่งของห้อง
+,intel.unlock.room_types,ประเภทห้อง
+,intel.unlock.connections,ทางเชื่อม
+,intel.unlock.lock_states,ประตูใดถูกล็อก
+,intel.unlock.guard_counts,จำนวนผู้พิทักษ์
+,intel.unlock.light_levels,จุดที่มีแสง
+,intel.unlock.patrol_routes,เส้นทางลาดตระเวน
+,intel.unlock.objective,ตำแหน่งเป้าหมาย
+,intel.unlock.extraction,ตำแหน่งทางออก
+,intel.unlock.holding_rooms,ห้องที่กัดขัง
+,intel.unlock.may_be_stale,ข้อมูลนี้อาจไม่เป็นจริงแล้ว
+,contract.client,ผู้ว่าจ้าง
+,contract.objective,เป้าหมาย
+,contract.tier,ระดับ
+,contract.difficulty,ความยากโดยประมาณ
+,contract.reward,รางวัล
+,contract.heat_gain,ความร้อนที่เพิ่ม
+,contract.expiry,หมดอายุ
+,agent.detail.stats,สถิติทั้งหมด
+,agent.detail.traits,ลักษณะ
+,agent.detail.timeline,อาชีพ
+,agent.detail.records,ประวัติภารกิจ
+,agent.detail.salary,ค่าจ้าง
+,agent.detail.relationships,ความสัมพันธ์
+,agent.detail.none,ยังไม่มีภารกิจ
+,agent.stamina.physical,พลังกาย
+,agent.stamina.mental,พลังใจ

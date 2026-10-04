@@ -345,6 +345,24 @@ public static class SimulationRules
         return type?.TrainRatePerTick ?? 0;
     }
 
+    /// <summary>
+    /// A <c>room_type</c> row by id, or null.
+    /// </summary>
+    /// <remarks>
+    /// This is the <em>strategic</em> room table — the one the base is built from, with
+    /// build cost, upkeep, required act and minimum depth. It is not the tactical
+    /// <c>room_template</c> that <see cref="TacticalRoomTemplateFor"/> returns; the three
+    /// room-ish tables in this project are a standing source of confusion, and the build
+    /// panel needs this one.
+    /// </remarks>
+    public static RoomType? RoomTypeFor(int roomTypeId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbRoomType.GetOrDefault(roomTypeId);
+    }
+
     /// <summary>Every room type, or empty when the tables are unavailable.</summary>
     public static IReadOnlyList<RoomType> AllRoomTypes()
         => TablesOrNull?.TbRoomType.DataList ?? Array.Empty<RoomType>();

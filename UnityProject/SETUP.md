@@ -97,14 +97,34 @@ listed here because a fresh clone on a new machine has no `StreamingAssets` yet.
   fixing: look for templates that always produce the same shape and rooms too narrow to
   read.
 
-## Known gaps at the end of stage 7
+## Known gaps at the end of stage 8
 
 - **A saved campaign cannot be loaded.** `SaveService.SaveWorld` writes Core's canonical
   bytes and verifies them, but Core has no world deserialiser, so `TryLoadWorld` returns
   false and says so. Adding a Unity-side format now would mean writing one twice.
   `SiteLayout` does round-trip today via `SiteLayout.FromSaveData`.
-- **Localization rows are not wired to the table yet.** `LocalizationService` resolves keys
-  correctly and falls back as documented, but nothing populates it from the
-  `localization` table at boot. Stage 8 does this.
+- **`LocalizationService` is still never populated at boot.** The stage-8 work added the
+  155 keys the presenters need to both `data/localization/*.csv` (652 keys each now, of
+  which 497 are referenced by a table column and 155 are declared by hand in
+  `StageEightUiKeys`), and `TableValidatorTests.Localization_CoversEveryReferencedKey` now
+  fails the build in both directions if a referenced key is missing from either file or an
+  undeclared orphan key appears. But nothing reads those CSVs at runtime yet:
+  `LocalizationService.Add`/`AddRange` exist and `Get` falls back to the key itself, and no
+  boot path calls them. Until that is written, every label in the running game renders as
+  its key.
+- **The stage-8 UI is presenters only — no views.** The brief's foundation layer, top bar,
+  3D base cutaway, roster panel, agent detail, and the contracts / sleeper / mission-prep
+  screens are all unbuilt. What exists is the pure, testable decision logic behind them:
+  `MissionDifficulty` and `SkillBreakdown` in Core, six presenters under
+  `Assets/ProjectSpy/Scripts/Runtime/UI/Presenters/`, and `TooltipService`, which resolves
+  Core's breakdowns into tooltip lines and does no arithmetic of its own. Stage 7's
+  `WindowService`/`ToastService` in `UiServices.cs` are still model-only: plain
+  `GameObject` rent, no `OpenAsync`, no prefabs, no layering, no Escape wiring. There is no
+  `UIRoot` and no contracts presenter or view.
+- **The 63 new EditMode tests have never been run.** They are proven to bind and compile
+  (`tools/verify_unity_compile.py` reports zero errors across the three passes), but the MCP
+  bridge on port 25116 is down, so the Test Runner cannot execute them. Same for
+  `UrpSetup`, `BlockoutArtGenerator`, `SceneGenerator` and `BatchSetup.RunFullSetup()`.
+  The 818 Core tests do pass and are the only green evidence in the project.
 - **Stage 9a lighting.** One directional light per scene is set up so the blockout reads;
   the per-room key lights that make lighting a mechanic come with the tactical camera.
