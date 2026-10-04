@@ -35,12 +35,15 @@ namespace ProjectSpy.Unity.Tests
         /// Core must have its tables, or every assertion below would compare a fallback
         /// default against a fallback default and pass vacuously.
         /// </summary>
+        /// <remarks>
+        /// The tables are loaded once for the whole namespace by <see cref="TestTables"/>;
+        /// this only checks that it actually worked. A test that quietly compared two
+        /// fallbacks would be a green suite proving nothing.
+        /// </remarks>
         [OneTimeSetUp]
         public void RequireTables()
         {
-            Assert.That(SimulationRules.AreTablesLoaded, Is.True,
-                "Core tables are not loaded. Run 'pwsh tools/gen.ps1'. Without them these " +
-                "tests would assert that two identical fallbacks agree.");
+            TestTables.Require();
         }
 
         /// <summary>
@@ -232,8 +235,18 @@ namespace ProjectSpy.Unity.Tests
             }
         }
 
+        /// <summary>
+        /// Every site template id the compiled tables define.
+        /// </summary>
+        /// <remarks>
+        /// Read through <see cref="TestTables"/> rather than Core's own
+        /// <c>ProjectSpy.Tables.TableService</c>. That loader walks up from
+        /// <c>AppContext.BaseDirectory</c>, which inside Unity is the Editor install
+        /// directory, so calling it here threw — which is the same blind loader that had
+        /// the game running on fallback balance. One loader, loaded once, used everywhere.
+        /// </remarks>
         private static IEnumerable<int> TemplateIds()
-            => ProjectSpy.Tables.TableService.Load().TbSiteTemplate.DataList.Select(r => r.Id);
+            => TestTables.Service.Tables.TbSiteTemplate.DataList.Select(r => r.Id);
 
         private static IEnumerable<SiteLayout> SampleLayouts(int templateId)
         {

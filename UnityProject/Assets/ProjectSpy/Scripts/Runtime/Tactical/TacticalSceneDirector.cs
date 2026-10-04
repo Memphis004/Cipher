@@ -438,7 +438,7 @@ namespace ProjectSpy.Unity.Tactical
 
                 var collider = capsule.GetComponent<Collider>();
                 if (collider != null)
-                    Destroy(collider);
+                    TacticalObject.Destroy(collider);
 
                 var lightView = go.AddComponent<AgentLightView>();
                 lightView.Bind(actor, _lights);

@@ -153,7 +153,31 @@ namespace ProjectSpy.Unity.Tactical
             return material;
         }
 
-        /// <summary>The colour a look's HUD chip and legend swatch use.</summary>
+        /// <summary>
+        /// The colour a look's HUD chip and legend swatch use.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// These are legend glyphs, not pixel samples of the rooms. The material colours are
+        /// deliberately close together — Scouted is only "lit but drained", and Observed is
+        /// the building's own grey — because in the world the difference between them should
+        /// be something you notice rather than something you read off a colour chart. That
+        /// makes them useless in a legend: at one glance four of the five swatches have to
+        /// be told apart, and a swatch you cannot tell apart is worse than no swatch.
+        /// </para>
+        /// <para>
+        /// So the swatches are spread deliberately along one axis, darkness to brightness,
+        /// with Reported the only one carrying a hue. Unknown stays near-black because a void
+        /// that reads as a mid grey is not a void; Reported is cold and green because it is a
+        /// claim about the building rather than part of it; and Observed and Cleared are the
+        /// two bright neutrals at the top, ordered so that the brighter one is the stronger
+        /// state. The real rooms run cool (blue at or above green) and only Reported is
+        /// green-dominant, which is what makes "coloured" mean "claimed" rather than
+        /// "bright". A swatch therefore always matches its room's family — the lit greys
+        /// are cool grey, the claim is teal, the void is black — while staying separable
+        /// at 20 pixels.
+        /// </para>
+        /// </remarks>
         public static Color TintFor(FogLook look)
         {
             if (Tints.TryGetValue(look, out Color cached))
@@ -161,24 +185,15 @@ namespace ProjectSpy.Unity.Tactical
 
             Color tint = look switch
             {
-                FogLook.UnknownVoid => UnknownColour,
-                FogLook.Reported => ReportedColour,
-                FogLook.Scouted => ScoutedColour,
-                FogLook.Cleared => ClearedColour,
-                _ => Site.BlockoutMaterials.Grey.color,
+                FogLook.UnknownVoid => new Color(0.09f, 0.10f, 0.13f),
+                FogLook.Reported => new Color(0.26f, 0.45f, 0.43f),
+                FogLook.Scouted => new Color(0.42f, 0.47f, 0.52f),
+                FogLook.Observed => new Color(0.68f, 0.72f, 0.76f),
+                FogLook.Cleared => new Color(0.86f, 0.90f, 0.94f),
+                _ => new Color(0.68f, 0.72f, 0.76f),
             };
 
-            // HUD swatches sit on a dark background, so they are lifted from the material
-            // colour rather than being the material colour: a 0.19 tint rendered as an
-            // unlit quad and the same tint rendered as a flat swatch read as two different
-            // things, and the legend's whole job is to let the player match swatch to room.
             tint.a = 1f;
-            tint = Color.Lerp(tint, Color.white, look switch
-            {
-                FogLook.UnknownVoid => 0f,
-                FogLook.Reported => 0.30f,
-                _ => 0.55f,
-            });
 
             Tints[look] = tint;
             return tint;

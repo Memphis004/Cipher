@@ -168,6 +168,19 @@ namespace ProjectSpy.Unity.Simulation
             // its own pause and must not inherit Unity's.
             float realSeconds = Time.unscaledDeltaTime;
 
+            // A mission that has ended has nothing left to simulate, and Core says so by
+            // throwing from every Advance. Asking anyway turned one finished mission into
+            // an exception per frame for as long as the scene stayed open — hundreds of
+            // them within seconds — which buries any real error in the noise. The end of a
+            // mission is a state, not a fault, so the runner stops asking and holds the
+            // last rendered frame until something restarts it.
+            if (_session.Mode == SessionMode.Tactical
+                && _session.World.ActiveMission is { IsOver: true })
+            {
+                _alpha = 0f;
+                return;
+            }
+
             switch (_session.Mode)
             {
                 case SessionMode.Strategic:

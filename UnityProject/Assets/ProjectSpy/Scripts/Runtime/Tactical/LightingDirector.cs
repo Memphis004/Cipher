@@ -93,6 +93,18 @@ namespace ProjectSpy.Unity.Tactical
             public Light Realtime;
             public Transform Proxy;
             public MeshRenderer ProxyRenderer;
+
+            /// <summary>
+            /// Whether this emitter is inside the realtime budget.
+            /// </summary>
+            /// <remarks>
+            /// Remembered rather than inferred from the light being enabled, because
+            /// <see cref="Sync"/> enables and disables lights every frame and would
+            /// otherwise turn the budget back on the first frame after it was applied. That
+            /// is not a hypothetical: it is what made a site with thirty emitters render
+            /// thirty realtime lights a frame after deciding to afford twelve.
+            /// </remarks>
+            public bool WithinBudget;
         }
 
         /// <summary>
@@ -140,6 +152,8 @@ namespace ProjectSpy.Unity.Tactical
                 _order.Add(runtime.LightId);
             }
 
+            // Applied here rather than left to the caller: the budget is part of building
+            // the rendering, not a separate pass someone has to remember to run.
             RebuildProxy(root.transform);
         }
 
@@ -166,7 +180,7 @@ namespace ProjectSpy.Unity.Tactical
             foreach (Entry entry in _entries.Values)
             {
                 if (entry.Proxy != null)
-                    Destroy(entry.Proxy.gameObject);
+                    TacticalObject.Destroy(entry.Proxy.gameObject);
             }
 
             if (proxyRoot == null)
@@ -181,11 +195,11 @@ namespace ProjectSpy.Unity.Tactical
             {
                 Entry entry = _entries[lightId];
                 bool affordable = granted < MaxRealtimeLights;
+                entry.WithinBudget = affordable;
 
                 if (affordable)
                 {
                     granted++;
-                    entry.Realtime.gameObject.SetActive(true);
                     entry.Realtime.enabled = entry.Runtime.IsWorking;
                     entry.Proxy = null;
                     entry.ProxyRenderer = null;
@@ -207,7 +221,9 @@ namespace ProjectSpy.Unity.Tactical
         /// <remarks>
         /// Reading <c>IsWorking</c> rather than tracking a local copy of it is what keeps
         /// the two in step: Core can change a light through any of its own callers, and
-        /// this cannot end up disagreeing with it.
+        /// this cannot end up disagreeing with it. The budget is respected separately,
+        /// because "is this light working" and "is this light one we can afford" are two
+        /// different questions and answering only the first one puts the budget back.
         /// </remarks>
         public void Sync()
         {
@@ -216,7 +232,7 @@ namespace ProjectSpy.Unity.Tactical
                 bool working = entry.Runtime.IsWorking;
 
                 if (entry.Realtime != null && entry.Realtime.enabled != working)
-                    entry.Realtime.enabled = working;
+                    entry.Realtime.enabled = working && entry.WithinBudget;
 
                 if (entry.ProxyRenderer != null && entry.ProxyRenderer.enabled != working)
                     entry.ProxyRenderer.enabled = working;
@@ -282,6 +298,7 @@ namespace ProjectSpy.Unity.Tactical
             }
 
             ApplyLight(entry.Realtime, current);
+            entry.Realtime.enabled = current.IsWorking && entry.WithinBudget;
             entry.Runtime = current;
 
             if (entry.ProxyRenderer != null)
@@ -326,7 +343,7 @@ namespace ProjectSpy.Unity.Tactical
 
             var collider = go.GetComponent<Collider>();
             if (collider != null)
-                Destroy(collider);
+                TacticalObject.Destroy(collider);
 
             go.transform.SetParent(parent, true);
 

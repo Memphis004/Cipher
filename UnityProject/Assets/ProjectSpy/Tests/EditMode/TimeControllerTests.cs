@@ -60,30 +60,60 @@ namespace ProjectSpy.Unity.Tests
             }
         }
 
+        /// <summary>
+        /// A controller that rounded per frame instead of accumulating would advance
+        /// nothing, ever, and the clock would simply stop.
+        /// </summary>
+        /// <remarks>
+        /// The frame count is chosen so the total lands a hair <i>under</i> a whole second:
+        /// two hundred frames of <c>float</c> 0.005 is 0.99999998 seconds, not 1. So the
+        /// first assertion is that no tick has fired, and the second is that the very next
+        /// frame completes the second — which it can only do if the 0.00000002 remainder
+        /// was banked rather than discarded. That is the property this test is for, and it
+        /// holds regardless of how the float arithmetic lands.
+        /// </remarks>
         [Test]
         public void AFractionalRemainderCarriesAcrossFrames()
         {
-            // Half speed is half a tick per second. A controller that rounded per frame
-            // would advance zero ticks, forever, and the clock would simply stop.
             var controller = new StrategicTimeController(StrategicTimeScale.Normal);
 
-            int total = 0;
-            for (int i = 0; i < 100; i++)
-                total += controller.Consume(0.005f);
+            int justUnderASecond = 0;
+            for (int i = 0; i < 200; i++)
+                justUnderASecond += controller.Consume(0.005f);
 
-            Assert.That(total, Is.EqualTo(1), "half a second of frames should yield exactly one tick");
+            int oneFrameLater = justUnderASecond + controller.Consume(0.005f);
+
+            Assert.That(justUnderASecond, Is.Zero,
+                "two hundred float frames is 0.99999998s, which is not yet a whole second");
+            Assert.That(oneFrameLater, Is.EqualTo(1),
+                "the banked remainder should carry through and complete the second on the next frame");
         }
 
+        /// <summary>
+        /// Many small frames lose no time against the nominal duration.
+        /// </summary>
+        /// <remarks>
+        /// Same shape as the strategic case: two hundred and fifty frames of <c>float</c>
+        /// 0.02 is 4.9999989 seconds, so fifty steps is genuinely not due yet, and the
+        /// fiftieth arrives on the next frame. Asserting the exact total at frame 250
+        /// would be asserting that <c>float</c> arithmetic is exact.
+        /// </remarks>
         [Test]
         public void ManySmallFramesSumToTheSameTicksAsOneBigOne()
         {
             var controller = new TacticalTimeController(TacticalTimeScale.Normal);
+            int perSecond = TacticalTimeScaleInfo.StepsPerRealSecond(TacticalTimeScale.Normal);
 
-            int accumulated = 0;
-            for (int i = 0; i < 50; i++)
-                accumulated += controller.Consume(0.02f);
+            int justUnderFiveSeconds = 0;
+            for (int i = 0; i < 250; i++)
+                justUnderFiveSeconds += controller.Consume(0.02f);
 
-            Assert.That(accumulated, Is.EqualTo(TacticalTimeScaleInfo.StepsPerRealSecond(TacticalTimeScale.Normal)));
+            int oneFrameLater = justUnderFiveSeconds + controller.Consume(0.02f);
+
+            Assert.That(justUnderFiveSeconds, Is.EqualTo(perSecond * 5 - 1),
+                "250 float frames is 4.9999989s, so the fiftieth step is not due yet");
+            Assert.That(oneFrameLater, Is.EqualTo(perSecond * 5),
+                "the banked remainder should carry through and yield the fiftieth step");
         }
 
         [Test]

@@ -33,6 +33,17 @@ namespace ProjectSpy.Unity.Tactical
     /// <remarks>
     /// A band rather than a single floor because an orthographic cutaway camera almost
     /// never frames exactly one storey — at the default zoom it frames two or three, and a
+    /// rule that culled everything but the floor the controlled agent was standing on would
+    /// remove the stairs the player is about to walk up.
+    ///
+    /// A band is never empty: constructed with its ends the wrong way round it collapses to
+    /// the higher floor rather than inverting. An empty band would hide every floor and
+    /// render nothing, which is the same silent failure as a camera pointed away from the
+    /// site — nothing in a screenshot says "the band was inverted".
+    /// </remarks>
+    /// <remarks>
+    /// A band rather than a single floor because an orthographic cutaway camera almost
+    /// never frames exactly one storey — at the default zoom it frames two or three, and a
     /// rule that culled everything but the floor the controlled agent was standing on
     /// would remove the stairs the player is about to walk up.
     /// </remarks>
