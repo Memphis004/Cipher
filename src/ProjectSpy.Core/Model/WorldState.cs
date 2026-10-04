@@ -1,3 +1,7 @@
+using ProjectSpy.Core.Missions;
+using ProjectSpy.Core.Squad;
+using ProjectSpy.Core.Tactical;
+
 namespace ProjectSpy.Core;
 
 /// <summary>
@@ -21,7 +25,7 @@ public sealed class WorldState
     public WorldState(ulong seed, int baseLayerCount = 12, int baseSlotsPerLayer = 24)
     {
         Seed = seed;
-        Clock = new GameClock(Tick.Zero);
+        Clock = new StrategicClock(Tick.Zero);
         RngStreams = new RngStreams(seed);
         Resources = Resources.Starting;
         BaseLayout = new BaseLayout(baseLayerCount, baseSlotsPerLayer);
@@ -39,7 +43,7 @@ public sealed class WorldState
     public ulong Seed { get; init; }
 
     /// <summary>Current time.</summary>
-    public GameClock Clock { get; init; }
+    public StrategicClock Clock { get; init; }
 
     /// <summary>Current balances.</summary>
     public Resources Resources { get; set; } = Resources.Empty;
@@ -106,6 +110,132 @@ public sealed class WorldState
 
     /// <summary>Mission ids currently deployed or in progress.</summary>
     public Dictionary<int, MissionState> ActiveMissions { get; } = new();
+
+    /// <summary>
+    /// The tactical mission being played right now, or null.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Non-null exactly while the session is in <see cref="SessionMode.Tactical"/>.
+    /// The two are kept in step by <see cref="GameSession"/>, which is the only thing
+    /// allowed to write either — a mission left dangling here while the base clock
+    /// runs would be a save that resumes inside a mission nobody is in.
+    /// </para>
+    /// <para>
+    /// Distinct from <see cref="ActiveMissions"/>, which tracks missions across the
+    /// whole deployment lifecycle including travel. One mission is in both at once;
+    /// they answer different questions.
+    /// </para>
+    /// </remarks>
+    public TacticalState? ActiveMission { get; set; }
+
+    /// <summary>
+    /// Sleeper operations currently running, in insertion order.
+    /// </summary>
+    /// <remarks>
+    /// A list rather than a dictionary keyed by site: the player may legitimately run
+    /// two operations against one site, and insertion order is the order the UI shows.
+    /// </remarks>
+    public List<SleeperOperation> SleeperOperations { get; } = new();
+
+    /// <summary>
+    /// The newest intel snapshot per site.
+    /// </summary>
+    /// <remarks>
+    /// Keyed by site id so it stays bounded: a site that has been spied on a hundred
+    /// times holds one snapshot, not a hundred. Stage 5 decides whether older ones are
+    /// worth keeping for the debrief; until then they are not, and storing them would
+    /// only grow every save.
+    /// </remarks>
+    public Dictionary<int, IntelSnapshot> IntelSnapshots { get; } = new();
+
+    /// <summary>
+    /// Operatives currently held by the enemy, with their rescue countdowns.
+    /// </summary>
+    /// <remarks>
+    /// A list rather than a dictionary keyed by agent: an agent can only be held once, but
+    /// several can be held in one building, and the rescue planner needs them in a stable
+    /// order rather than a keyed lookup. Entries are removed the tick a prisoner is lost,
+    /// so the list is "who is still recoverable" at all times.
+    /// </remarks>
+    public List<CaptureRecord> Captures { get; } = new();
+
+    /// <summary>
+    /// Folds one intel claim into the state hash.
+    /// </summary>
+    /// <remarks>
+    /// Per-type rather than by reflection, because a reflection-based fold would silently
+    /// start covering a field the moment someone added one — including a field that
+    /// turns out to be derived, which would then hash differently on two runs that
+    /// behave identically. Enumerating the cases here makes every hashed field a
+    /// deliberate decision, and adding a claim type without hashing it is a compile error
+    /// rather than a silent divergence.
+    /// </remarks>
+    private static ulong HashIntelEntry(IntelEntry entry)
+    {
+        unchecked
+        {
+            switch (entry)
+            {
+                case IntelRoomEntry room:
+                    return Hash(room.RoomId.Value, room.FloorIndex, room.StartX.Raw, room.EndX.Raw,
+                                room.RoomTemplateId, room.GuardCount, room.CivilianCount,
+                                (int)room.LightLevel, room.LightLevelKnown ? 1 : 0, (int)room.Roles,
+                                (long)HashText(room.NameKey));
+
+                case IntelConnectionEntry connection:
+                    return Hash(connection.ConnectionId.Value, connection.RoomA.Value,
+                                connection.RoomB.Value, connection.FloorIndexA, connection.FloorIndexB,
+                                (int)connection.Kind, connection.IsVertical ? 1 : 0,
+                                connection.IsLocked ? 1 : 0);
+
+                case IntelPatrolEntry patrol:
+                    ulong route = Hash(patrol.GuardId.Value, patrol.ArchetypeId,
+                                       (int)patrol.Role, patrol.HomeRoomId.Value, patrol.Route.Count);
+                    foreach (SiteRoomId roomId in patrol.Route)
+                        route = Mix(route, (ulong)roomId.Value);
+                    return route;
+
+                case IntelHoldingEntry holding:
+                    return Hash(holding.AgentId.Value, holding.RoomId.Value, holding.TicksUntilLost);
+
+                default:
+                    return 0UL;
+            }
+        }
+    }
+
+    private static ulong Hash(params long[] values)
+    {
+        unchecked
+        {
+            ulong hash = 14695981039346656037UL;
+
+            foreach (long value in values)
+            {
+                hash ^= (ulong)value;
+                hash *= 1099511628211UL;
+            }
+
+            return hash;
+        }
+    }
+
+    private static ulong HashText(string? value)
+    {
+        unchecked
+        {
+            ulong hash = 14695981039346656037UL;
+
+            foreach (char c in value ?? string.Empty)
+            {
+                hash ^= c;
+                hash *= 1099511628211UL;
+            }
+
+            return hash;
+        }
+    }
 
     /// <summary>Contract ids currently offered.</summary>
     public Dictionary<int, ContractState> Contracts { get; } = new();
@@ -511,6 +641,213 @@ public sealed class WorldState
                 hash = Mix(hash, (uint)room.Level);
                 hash = Mix(hash, (uint)room.Condition);
                 hash = Mix(hash, (uint)room.ConstructionTicksRemaining);
+            }
+
+            // The tactical mission participates. A world saved mid-mission and one
+            // saved at the same strategic tick with no mission running differ in what
+            // the player is looking at, so the fingerprint has to say so — otherwise
+            // the determinism test would bless a save that resumed at the wrong moment.
+            if (ActiveMission is not null)
+            {
+                hash = Mix(hash, (ulong)ActiveMission.MissionId);
+                hash = Mix(hash, (ulong)ActiveMission.SiteId);
+                hash = Mix(hash, (ulong)ActiveMission.StartedOnTick.Value);
+                hash = Mix(hash, (ulong)ActiveMission.Step);
+                hash = Mix(hash, ActiveMission.TimeConverted ? 1UL : 0UL);
+
+                // Every field of the running mission, not just its identity. A mission
+                // where the alarm has reached lockdown and one where it has not are
+                // different worlds, and a hash that could not tell them apart would
+                // let a replay diverge in exactly the field the player cares about.
+                hash = Mix(hash, (uint)ActiveMission.Alarm.Level);
+                hash = Mix(hash, (uint)ActiveMission.Alarm.Band);
+                hash = Mix(hash, (uint)ActiveMission.Outcome);
+                hash = Mix(hash, (uint)ActiveMission.Objective.Percent);
+                hash = Mix(hash, ActiveMission.Objective.IsComplete ? 1UL : 0UL);
+                hash = Mix(hash, (uint)ActiveMission.HeatGained);
+                hash = Mix(hash, (uint)ActiveMission.EvidenceLevel);
+                hash = Mix(hash, (ulong)ActiveMission.LethalActs);
+
+                // Stage 4e: the squad's own state. A mission where the Handler's post
+                // has been taken and one where it has not are different worlds, and so
+                // are two where the player has issued different orders — which is
+                // precisely the pair a replay has to be able to tell apart.
+                hash = Mix(hash, (ulong)(ActiveMission.Control.AllHeld ? 1 : 0));
+                hash = Mix(hash, (ulong)(ActiveMission.Control.Controlled?.Value ?? 0));
+                hash = Mix(hash, (ulong)ActiveMission.Control.LastStep);
+                hash = Mix(hash, ActiveMission.AbortCalled ? 1UL : 0UL);
+                hash = Mix(hash, (ulong)ActiveMission.LastAbortStep);
+
+                ObjectiveOutcome objective = ActiveMission.ObjectiveOutcome;
+                hash = Mix(hash, (uint)objective.Type);
+                hash = Mix(hash, (ulong)objective.WorkSteps);
+                hash = Mix(hash, (ulong)objective.ExfilSteps);
+                hash = Mix(hash, (ulong)objective.RoomsObserved);
+                hash = Mix(hash, (ulong)objective.BlastStepsRemaining);
+                hash = Mix(hash, (ulong)objective.PrisonerId.Value);
+                hash = Mix(hash, objective.PrisonerFreed ? 1UL : 0UL);
+                hash = Mix(hash, (ulong)objective.TargetId.Value);
+                hash = Mix(hash, objective.TargetFled ? 1UL : 0UL);
+                hash = Mix(hash, objective.PlantSucceeded ? 1UL : 0UL);
+                hash = Mix(hash, (ulong)objective.WorkInteractableId);
+                hash = Mix(hash, objective.IsComplete ? 1UL : 0UL);
+                hash = Mix(hash, objective.IsFailed ? 1UL : 0UL);
+                hash = Mix(hash, (uint)objective.Failure);
+
+                CommandPostState post = ActiveMission.CommandPost;
+                hash = Mix(hash, (ulong)(post.HandlerId?.Value ?? 0));
+                hash = Mix(hash, post.IsCompromised ? 1UL : 0UL);
+                hash = Mix(hash, (ulong)post.CompromisedOnStep);
+                hash = Mix(hash, (ulong)post.StepsUntilHandlerTaken);
+                hash = Mix(hash, (ulong)(post.FeedRoomId ?? 0));
+                hash = Mix(hash, (ulong)post.FeedStepsRemaining);
+
+                foreach (KeyValuePair<ProjectSpy.Tables.SupportAbility, int> cooldown
+                         in post.Cooldowns.OrderBy(c => (int)c.Key))
+                {
+                    hash = Mix(hash, (uint)cooldown.Key);
+                    hash = Mix(hash, (ulong)cooldown.Value);
+                }
+
+                if (ActiveMission.Composition is { } composition)
+                {
+                    hash = Mix(hash, (ulong)composition.Members.Count);
+
+                    foreach (SquadMember member in composition.Members)
+                    {
+                        hash = Mix(hash, (ulong)member.AgentId.Value);
+                        hash = Mix(hash, (ulong)member.RoleId);
+
+                        foreach ((int gadgetId, int uses) in member.Gadgets.Entries)
+                        {
+                            hash = Mix(hash, (ulong)gadgetId);
+                            hash = Mix(hash, (ulong)uses);
+                        }
+                    }
+                }
+
+                foreach (SquadMemberOrders orders in ActiveMission.Control.Members)
+                {
+                    hash = Mix(hash, (ulong)orders.AgentId.Value);
+                    hash = Mix(hash, orders.Held ? 1UL : 0UL);
+                    hash = Mix(hash, (ulong)orders.LastOrderStep);
+                    hash = Mix(hash, (ulong)orders.Queue.Count);
+
+                    foreach (SquadStandingOrder order in orders.Queue)
+                    {
+                        hash = Mix(hash, (uint)order.Kind);
+                        hash = Mix(hash, (ulong)order.Target.FloorIndex);
+                        hash = Mix(hash, (ulong)order.Target.X.Raw);
+                        hash = Mix(hash, (ulong)order.ConnectionId.Value);
+                        hash = Mix(hash, (ulong)order.InteractableId);
+                        hash = Mix(hash, (ulong)order.TargetActorId.Value);
+                        hash = Mix(hash, (ulong)order.ItemId);
+                        hash = Mix(hash, (ulong)order.IssuedOnStep);
+                    }
+                }
+
+                foreach (TacticalActor actor in ActiveMission.SortedActors)
+                {
+                    hash = Mix(hash, (ulong)actor.Id.Value);
+                    hash = Mix(hash, (ulong)actor.AgentId.Value);
+                    hash = Mix(hash, (ulong)actor.GuardId.Value);
+                    hash = Mix(hash, (ulong)actor.CivilianId.Value);
+                    hash = Mix(hash, (ulong)actor.Position.FloorIndex);
+                    hash = Mix(hash, (ulong)actor.Position.X.Raw);
+                    hash = Mix(hash, (uint)actor.Facing);
+                    hash = Mix(hash, (uint)actor.Posture);
+                    hash = Mix(hash, (uint)actor.Condition);
+                    hash = Mix(hash, (uint)actor.Health);
+                    hash = Mix(hash, (ulong)actor.BleedOutStepsRemaining);
+                    hash = Mix(hash, (uint)actor.Stamina);
+                    hash = Mix(hash, (uint)actor.Suspicion.Value);
+                    hash = Mix(hash, (ulong)actor.Carrying.Value);
+                    hash = Mix(hash, actor.IsCarried ? 1UL : 0UL);
+                    hash = Mix(hash, actor.BodyHidden ? 1UL : 0UL);
+                    hash = Mix(hash, (ulong)actor.DisguiseId);
+                    hash = Mix(hash, (ulong)actor.RouteIndex);
+                    hash = Mix(hash, actor.IsOffRoute ? 1UL : 0UL);
+                    hash = Mix(hash, (uint)actor.MoralStrain);
+                    hash = Mix(hash, (ulong)actor.Memory.LastSeen.FloorIndex);
+                    hash = Mix(hash, (ulong)actor.Memory.LastSeen.X.Raw);
+                    hash = Mix(hash, (ulong)actor.Memory.LastSeenStep);
+                    hash = Mix(hash, (ulong)actor.Memory.LastNoiseOrigin.FloorIndex);
+                    hash = Mix(hash, (ulong)actor.Memory.LastNoiseOrigin.X.Raw);
+                    hash = Mix(hash, (ulong)actor.Memory.LastNoiseStep);
+                    hash = Mix(hash, (uint)actor.Memory.PeakLevel);
+                    hash = Mix(hash, (ulong)(actor.Action?.ActionId ?? 0));
+                    hash = Mix(hash, (ulong)(actor.Action?.StepsSpent ?? 0));
+                    hash = Mix(hash, (ulong)(actor.Action?.RemainingCm ?? 0));
+                }
+
+                // Doors, sorted by connection id so the hash cannot depend on the order
+                // a mission happened to shut them in.
+                foreach (KeyValuePair<Missions.SiteConnectionId, Tactical.ConnectionState> door
+                         in ActiveMission.Doors.OrderBy(d => d.Key.Value))
+                {
+                    hash = Mix(hash, (ulong)door.Key.Value);
+                    hash = Mix(hash, (uint)door.Value);
+                }
+
+                foreach (Missions.SiteConnectionId shut
+                         in ActiveMission.DoorsShutByAlarm.OrderBy(id => id.Value))
+                {
+                    hash = Mix(hash, (ulong)shut.Value);
+                }
+
+                foreach (Tactical.LightRuntime light in ActiveMission.Lights.Emitters)
+                {
+                    hash = Mix(hash, (ulong)light.LightId);
+                    hash = Mix(hash, light.SwitchedOff ? 1UL : 0UL);
+                    hash = Mix(hash, light.Destroyed ? 1UL : 0UL);
+                }
+
+                hash = Mix(hash, (ulong)ActiveMission.NoiseLog.Count);
+                hash = Mix(hash, (ulong)ActiveMission.OrderLog.Count);
+                hash = Mix(hash, (ulong)ActiveMission.Log.Count);
+            }
+
+            foreach (SleeperOperation sleeper in SleeperOperations.OrderBy(s => s.AgentId.Value))
+            {
+                hash = Mix(hash, (ulong)sleeper.AgentId.Value);
+                hash = Mix(hash, (ulong)sleeper.SiteId);
+                hash = Mix(hash, (ulong)sleeper.StartedOnTick.Value);
+                hash = Mix(hash, (uint)sleeper.IntelPercent);
+                hash = Mix(hash, (uint)sleeper.Status);
+                hash = Mix(hash, (ulong)(sleeper.DiscoveredOnTick?.Value ?? -1L));
+                hash = Mix(hash, (uint)sleeper.IntelProgressHundredths);
+                hash = Mix(hash, (ulong)(sleeper.SnapshotOnTick?.Value ?? -1L));
+            }
+
+            foreach (IntelSnapshot snapshot in IntelSnapshots.Values.OrderBy(s => s.SiteId))
+            {
+                hash = Mix(hash, (ulong)snapshot.SiteId);
+                hash = Mix(hash, (ulong)snapshot.TakenOnTick.Value);
+                hash = Mix(hash, (uint)snapshot.IntelPercent);
+                hash = Mix(hash, snapshot.IsPoisoned ? 1UL : 0UL);
+                hash = Mix(hash, (ulong)snapshot.MapSeed);
+                hash = Mix(hash, (ulong)snapshot.Entries.Count);
+
+                // The claims themselves, not just how many of there are. Two snapshots
+                // with the same count and different contents would be indistinguishable
+                // to a count-only hash, and a determinism test built on the state hash
+                // would pass while the map quietly changed.
+                foreach (IntelEntry entry in snapshot.Entries)
+                {
+                    hash = Mix(hash, (ulong)(int)entry.FactKind);
+                    hash = Mix(hash, (ulong)(int)entry.Confidence);
+                    hash = Mix(hash, (ulong)(int)entry.Source);
+                    hash = Mix(hash, HashIntelEntry(entry));
+                }
+            }
+
+            foreach (CaptureRecord capture in Captures.OrderBy(c => c.AgentId.Value))
+            {
+                hash = Mix(hash, (ulong)capture.AgentId.Value);
+                hash = Mix(hash, (ulong)capture.CaptureSiteId);
+                hash = Mix(hash, (ulong)capture.HostSiteId);
+                hash = Mix(hash, (ulong)capture.CapturedOnTick.Value);
+                hash = Mix(hash, (ulong)capture.TicksUntilLost);
             }
 
             // RNG state participates: two worlds that agree visually but will roll

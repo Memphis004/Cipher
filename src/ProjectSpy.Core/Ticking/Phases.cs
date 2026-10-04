@@ -165,6 +165,10 @@ public sealed class EventChecksPhase : ITickPhase
             RecruitmentSystem.RefreshPoolIfDue(world, context.Events);
             MoleSystem.TickInvestigations(world, context.Events);
 
+            // Sleeper work is per-tick rather than weekly, so it sits above the weekly
+            // gate: an operation has to accrue on the hour, not on the settlement day.
+            SleeperSystem.Tick(world, context.Tick, context.Events);
+
             // The weekly block fires on the settlement day itself, and only once per
             // week. Keying it to the week boundary instead would never reach the
             // settlement day at all.

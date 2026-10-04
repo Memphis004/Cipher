@@ -1,282 +1,499 @@
 ##var,key,text
 ##type,string,string
+,action.combat_block,ป้องกัน
+,action.combat_melee,ต่อสู้ระยะปิด
+,action.combat_melee_lethal,ฆ่าในระยะปิด
+,action.combat_shoot,ยิง
+,action.combat_suppress,ระดับไฟ
+,action.combat_takedown,จับตัวแบบไม่ฆ่า
+,action.interact_close_door,ปิดประตู
+,action.interact_exfiltrate,ดึงข้อมูลออก
+,action.interact_force_door,งัดประตู
+,action.interact_hack_terminal,แฮกเครื่องปลายทาง
+,action.interact_lock_door,ล็อกประตู
+,action.interact_open_door,เปิดประตู
+,action.interact_search_container,ค้นสิ่งของ
+,action.move_climb,ปีน
+,action.move_crouch,เดินนั่ง
+,action.move_prone,นอนราบ
+,action.move_run,วิ่ง
+,action.move_vault,ปีนป่าย
+,action.move_walk,เดิน
+,action.stealth_disguise,ปลอมตัว
+,action.stealth_drag_body,ลากศพ
+,action.stealth_hide_body,ซ่อนศพ
+,action.stealth_plant_device,วางอุปกรณ์
+,action.stealth_switch_light,สลับไฟ
+,action.stealth_use_vent,ใช้ช่องระบาย
+,action.support_carry_ally,แบกพวกที่ล้ม
+,action.support_heal,รักษา
+,action.support_observe,สังเกต
+,action.support_revive,ช่วยฟื้น
+,action.support_signal_squad,สัญญาณชมพ์
+,action.support_smoke,ปล่อยควัน
+,action.support_wait,รอ
+,action.traverse_door,ผ่านประตู
+,action.traverse_vent,ผ่านช่องระบาย
+,capture_site.black_bunker,บังเกอร์ลับ
+,capture_site.detention_block,ปีกคุมขัง
+,capture_site.office_annexe,อาคารผนวกสำนักงาน
+,capture_site.roadside_hold,ที่คุมขังริมถนน
+,class.facilitator,ผู้ประสานงาน
 ,class.infiltrator,ฝ่ายแอบบุกรุก
 ,class.operative,พนักงานปฏิบัติการ
 ,class.technician,ช่างเทคนิค
-,class.facilitator,ผู้ประสานงาน
-,room.gym,ห้องยิม
-,room.range,ห้องยิงปืน
-,room.server_room,ห้องเซิร์ฟเวอร์
-,room.social_lab,ห้องทดลองสังคม
-,room.isolation_chamber,ห้องกักแยก
-,room.dorm,หอพัก
-,room.infirmary,ห้องพยาบาล
-,room.lounge,ห้องพักผ่อน
-,room.therapy_office,ห้องบำบัด
-,room.ops_center,ศูนย์บัญชาการ
-,room.comms_room,ห้องสื่อสาร
-,room.intel_archive,คลังข้อมูลลับ
-,room.workshop,ห้องประดิษฐ์
-,room.armory,คลังอาวุธ
-,room.cafeteria,โรงอาหาร
-,room.security_post,จุดยาม
-,room.vault,ห้องปลอดภัยเก็บทรัพย์
-,room.safe_room,ห้องหลบภัย
-,room.decoy_front,หน้าต่างหลอก
-,room.office,สำนักงานบริหาร
-,room.hr,ห้องบุคคล
-,room.counter_intel,ห้องต่อต้านข่าวกรอง
-,mission.steal_data_t1,ขโมยข้อมูล (ระดับ 1)
-,mission.steal_data_t2,ขโมยข้อมูล (ระดับ 2)
-,mission.steal_data_t3,ขโมยข้อมูล (ระดับ 3)
-,mission.sabotage_t1,ทำลายระบบ (ระดับ 1)
-,mission.sabotage_t2,ทำลายระบบ (ระดับ 2)
-,mission.sabotage_t3,ทำลายระบบ (ระดับ 3)
+,connection.door,ประตู
+,connection.hole,รูเจาะ
+,connection.ladder,บันไดปีน
+,connection.locked_door,ประตูล็อก
+,connection.stair,บันได
+,connection.vent,ช่องระบายอากาศ
+,connection.window,หน้าต่าง
+,economy.loan.large,กู้ใหญ่
+,economy.loan.medium,กู้กลาง
+,economy.loan.small,กู้เล็ก
+,event.align_the_dish,เล็งจานรับสัญญาณ
+,event.appraise_the_collection,ประเมินราคาของสะสม
+,event.blend_with_the_visitors,ปะปนไปกับผู้มาเยือน
+,event.blind_copy,ถ่ายเอกสารแบบเร็ว
+,event.burn_a_transmission,ส่งสัญญาณรบกวน
+,event.bypass_biometric,หลบระบบสแกนลายนิ้วมือ
+,event.bypass_the_bunker_interlock,หลบระบบล็อกห้องป้องกัน
+,event.calibrate_the_spectrometer,ปรับเทียบเครื่องวิเคราะห์
+,event.carry_the_crate,แบกลังออกไป
+,event.case_the_gems,สำรวจเพชร
+,event.clone_credentials,โกงเครดิตฐานของพนักงาน
+,event.contaminate_the_sample,ปนเปื้อนตัวอย่าง
+,event.cool_the_mainframe,ทำให้เครื่องหลักเย็นลง
+,event.crack_the_vault,เจาะห้องเก็บทรัพย์
+,event.cross_the_firewall_of_jokes,เดินผ่านใต้การล้อเล่น
+,event.disable_the_bunker_alarm,ปิดระบบเตือนภัยห้องป้องกัน
+,event.distract_guard,ลวกยามให้ออกไปทาง
+,event.eavesdrop_at_the_table,แอบฟังข้างโต๊ะ
+,event.fake_the_transfer_order,ปลอมคำสั่งโยกย้าย
+,event.forge_a_badge,ปลอมบัตรผ่าน
+,event.forge_signature,ปลอมลายเซ็น
+,event.forklift_accomplice,ช่วยเหลือคนงานรถยก
+,event.free_the_informant,ช่วยผู้ให้การออกจากห้องคุมขัง
+,event.hotwire_the_gate,ต่อสายเปิดประตู
+,event.index_the_archive,ทำดัชนีเอกสาร
+,event.lift_the_combination,เดารหัสตัวเลข
+,event.locate_the_manifest,ตามหาเอกสารบัญชีสินค้า
+,event.nar.align_the_dish,เล็งจานรับสัญญาณ
+,event.nar.appraise_the_collection,ประเมินราคาของสะสม
+,event.nar.blend_with_the_visitors,ปะปนไปกับผู้มาเยือน
+,event.nar.blind_copy,ถ่ายเอกสารแบบเร็ว
+,event.nar.burn_a_transmission,ส่งสัญญาณรบกวน
+,event.nar.bypass_biometric,หลบระบบสแกนลายนิ้วมือ
+,event.nar.bypass_the_bunker_interlock,หลบระบบล็อกห้องป้องกัน
+,event.nar.calibrate_the_spectrometer,ปรับเทียบเครื่องวิเคราะห์
+,event.nar.carry_the_crate,แบกลังออกไป
+,event.nar.case_the_gems,สำรวจเพชร
+,event.nar.clone_credentials,โกงเครดิตฐานของพนักงาน
+,event.nar.contaminate_the_sample,ปนเปื้อนตัวอย่าง
+,event.nar.cool_the_mainframe,ทำให้เครื่องหลักเย็นลง
+,event.nar.crack_the_vault,เจาะห้องเก็บทรัพย์
+,event.nar.cross_the_firewall_of_jokes,เดินผ่านใต้การล้อเล่น
+,event.nar.disable_the_bunker_alarm,ปิดระบบเตือนภัยห้องป้องกัน
+,event.nar.distract_guard,ลวกยามให้ออกไปทาง
+,event.nar.eavesdrop_at_the_table,แอบฟังข้างโต๊ะ
+,event.nar.fake_the_transfer_order,ปลอมคำสั่งโยกย้าย
+,event.nar.forge_a_badge,ปลอมบัตรผ่าน
+,event.nar.forge_signature,ปลอมลายเซ็น
+,event.nar.forklift_accomplice,ช่วยเหลือคนงานรถยก
+,event.nar.free_the_informant,ช่วยผู้ให้การออกจากห้องคุมขัง
+,event.nar.hotwire_the_gate,ต่อสายเปิดประตู
+,event.nar.index_the_archive,ทำดัชนีเอกสาร
+,event.nar.lift_the_combination,เดารหัสตัวเลข
+,event.nar.locate_the_manifest,ตามหาเอกสารบัญชีสินค้า
+,event.nar.patch_firewall,เจาะระบบกันไฟร์วอลล์
+,event.nar.photocopy_the_index,ถ่ายสำเนาดัชนี
+,event.nar.photograph_the_ledger,ถ่ายรูปสมุดบัญชี
+,event.nar.pick_the_shelved_file,หยิบแฟ้มที่ถูกเก็บไว้
+,event.nar.pickpocket_the_foreman,โจรกระเป๋าหัวหน้าคนงาน
+,event.nar.rack_space_analysis,วิเคราะห์พื้นที่ตู้เซิร์ฟเวอร์
+,event.nar.read_the_guest_list,แอบดูรายชื่อแขก
+,event.nar.replace_the_minutes,แก้ไขรายงานประชุม
+,event.nar.ride_the_maintenance_cycle,อาศัยช่วงเวลาที่เข้าบำรุง
+,event.nar.sabotage_the_centrifuge_queue,ก่อมีปัญหาคิวของเครื่องปั่น
+,event.nar.seduce_the_secretary,ล่อเลียนเลขานุการ
+,event.nar.seduce_the_warden,ล่อเลียนผู้คุม
+,event.nar.sell_to_the_fence,ขายต่อให้พ่อค้าซื้อของ
+,event.nar.sequence_the_genome,ถอดรหัสข้อมูลพันธุกรรม
+,event.nar.smuggle_the_centrifuge,ลักลอบเครื่องปั่น
+,event.nar.sneak_past_patrol,แอบผ่านไปรอบตรวจ
+,event.nar.sprint_the_haul,วิ่งหนีพร้อมของ
+,event.nar.steal_the_research_notes,ขโมยบันทึกงานวิจัย
+,event.nar.steal_the_roster,ขโมยรายชื่อพนักงาน
+,event.nar.talk_to_the_secretary,คุยกับเลขานุการ
+,event.nar.tape_the_backups,ดึงข้อมูลสำรองออกมา
+,event.nar.time_the_barrier_drop,จับจังหวะราวประตูที่กำลังจะลง
+,event.nar.timing_the_shift,ดูจังหวะเวรของยาม
+,event.nar.tunnel_under_the_bunker,ขุดอุโมงใต้ห้องป้องกัน
+,event.patch_firewall,เจาะระบบกันไฟร์วอลล์
+,event.photocopy_the_index,ถ่ายสำเนาดัชนี
+,event.photograph_the_ledger,ถ่ายรูปสมุดบัญชี
+,event.pick_the_shelved_file,หยิบแฟ้มที่ถูกเก็บไว้
+,event.pickpocket_the_foreman,โจรกระเป๋าหัวหน้าคนงาน
+,event.rack_space_analysis,วิเคราะห์พื้นที่ตู้เซิร์ฟเวอร์
+,event.read_the_guest_list,แอบดูรายชื่อแขก
+,event.replace_the_minutes,แก้ไขรายงานประชุม
+,event.ride_the_maintenance_cycle,อาศัยช่วงเวลาที่เข้าบำรุง
+,event.sabotage_the_centrifuge_queue,ก่อมีปัญหาคิวของเครื่องปั่น
+,event.seduce_the_secretary,ล่อเลียนเลขานุการ
+,event.seduce_the_warden,ล่อเลียนผู้คุม
+,event.sell_to_the_fence,ขายต่อให้พ่อค้าซื้อของ
+,event.sequence_the_genome,ถอดรหัสข้อมูลพันธุกรรม
+,event.smuggle_the_centrifuge,ลักลอบเครื่องปั่น
+,event.sneak_past_patrol,แอบผ่านไปรอบตรวจ
+,event.sprint_the_haul,วิ่งหนีพร้อมของ
+,event.steal_the_research_notes,ขโมยบันทึกงานวิจัย
+,event.steal_the_roster,ขโมยรายชื่อพนักงาน
+,event.talk_to_the_secretary,คุยกับเลขานุการ
+,event.tape_the_backups,ดึงข้อมูลสำรองออกมา
+,event.time_the_barrier_drop,จับจังหวะราวประตูที่กำลังจะลง
+,event.timing_the_shift,ดูจังหวะเวรของยาม
+,event.tunnel_under_the_bunker,ขุดอุโมงใต้ห้องป้องกัน
+,gadget.calming_draft,ยาคลายเครียด
+,gadget.decoy_charge,ระเบิดหลอก
+,gadget.forensic_kit,ชุดตรวจหลักฐาน
+,gadget.lockbypass_card,บัตรผ่านระบบล็อก
+,gadget.lockpick_set,ชุดชักลอก
+,gadget.medkit,ชุดปฐมพยาบาล
+,gadget.recon_scope,กล้องสำรวจ
+,gadget.signal_jammer,เครื่องกลบกวนสัญญาณ
+,gadget.stimulant,ยากระตุ้น
+,gadget.thermal_cutter,คัตร์ตัดความร้อน
+,gadget.voice_mimic,อุปกรณ์เลียนเสียง
+,gadget.wire_cutter,คัตร์ตัดสาย
+,goal.call_for_backup,เรียกกำลังเสริม
+,goal.close_open_door,ปิดประตูที่เปิดค้าง
+,goal.engage,เข้าต่อสู้
+,goal.flee,หลบหนี
+,goal.flee_and_report,หนีและรายงาน
+,goal.go_about_business,ทำงานตามหน้าที่
+,goal.guard_objective,เฝ้ารักษาเป้าหมาย
+,goal.hide,ซ่อนตัว
+,goal.investigate_noise,สืบเสาะเสียง
+,goal.investigate_sighting,สืบเสาะสิ่งที่พบเห็น
+,goal.panic,ตกใจ
+,goal.patrol,เดินตรวจตามเส้นทาง
+,goal.pursue_target,ไล่ตามเป้าหมาย
+,goal.raise_alarm,ยกเสียงเตือน
+,goal.report_missing_colleague,รายงานเพื่อนหาย
+,goal.report_to_guard,รายงานเจ้าหน้าที่
+,goal.restore_power,คืนไฟ
+,goal.revive_ally,ช่วยพวกที่ล้ม
+,goal.secure_prisoner,ควบคุมนักโทษ
+,goal.take_cover,หลบหลังกำแพง
+,goap.attack_target,โจมตีเป้าหมาย
+,goap.call_backup,เรียกกำลังเสริม
+,goap.chase_contact,ไล่ตามผู้บุกรุก
+,goap.civilian_flee,หลบหนี
+,goap.civilian_hide,ซ่อนตัว
+,goap.civilian_panic,ตกใจกลัว
+,goap.civilian_report,ไปรายงานเจ้าหน้าที่
+,goap.civilian_work,ทำงานประจำ
+,goap.close_door,ปิดประตู
+,goap.flee,หลบหนีออกไป
+,goap.guard_objective,เฝ้ารักษาเป้าหมาย
+,goap.investigate_point,ไปตรวจจุดที่ได้ยินเสียง
+,goap.raise_alarm,ยกเสียงเตือน
+,goap.reload,บรรจุกระสุนใหม่
+,goap.report_missing,รายงานเพื่อนหาย
+,goap.restore_power,คืนไฟฟ้า
+,goap.restrained_prisoner,จับกุมนักโทษ
+,goap.revive_ally,ช่วยเพื่อนที่ล้ม
+,goap.search_body,ตรวจสอบศพ
+,goap.secure_room,เข้าตรวจห้อง
+,goap.stand_post,ยืนประจำตำแหน่ง
+,goap.take_cover,หลบหลังกำแพง
+,goap.walk_patrol_route,เดินตามเส้นทางตรวจ
+,guard.blind_dog,สุนัขสายตาบอด
+,guard.dog_handler,คนจับสุนัข
+,guard.heavy,เจ้าหน้าที่พลัง
+,guard.nightwatch,ยามกลางคืน
+,guard.prison_scribe,เสมียนคุมคน
+,guard.private_guard,ราชทีตรังษ์
+,guard.response_officer,ตำรวจหน้าที่
+,guard.sentry,เจ้าหน้าที่ประจำตำแหน่ง
+,guard.technician,ช่างซ่อมบำรุง
+,guard.terminal_tech,ช่างเทคนิคเครื่องปลายทาง
+,guard.vault_guard,ผู้คุมห้องปลอดภัย
+,guard.watchman,ยาม
+,interactable.camera,กล้องวงจรปิด
+,interactable.container,ตู้สิ่งของ
+,interactable.door,ประตู
+,interactable.exit,ทางออก
+,interactable.guard,ยาม
+,interactable.objective,เป้าหมาย
+,interactable.terminal,เครื่องเทอร์มินัล
+,interactable.trap,กับดัก
+,item.antique_seal,ตราประทับโบราณ
+,item.bearer_bond,ตราสัญลักษณ์ผู้ถือ
+,item.calming_draft,ยาคลายเครียด
+,item.coded_ledger,บัญชีรหัส
+,item.contact_list,รายชื่อผู้ติดต่อ
+,item.emerald_pendant,จี้มรกต
+,item.encrypted_drive,ไดรฟ์เข้ารหัส
+,item.evidence_logbook,สมุดบันทึกหลักฐาน
+,item.evidence_tape,เทปหลักฐาน
+,item.fingerprints,ลายนิ้วมือ
+,item.forensic_kit,ชุดตรวจหลักฐาน
+,item.intel_dossier,เอกสารข่าวกรอง
+,item.lockpick_set,ชุดชักลอก
+,item.medkit,ชุดปฐมพยาบาล
+,item.rare_briefcase,กระเป๋าหายาก
+,item.ration_pack,ชุดอาหาร
+,item.signal_jammer,เครื่องกลบกวนสัญญาณ
+,item.stimulant,ยากระตุ้น
+,item.thermal_cutter,คัตร์ตัดความร้อน
+,item.voice_mimic,อุปกรณ์เลียนเสียง
+,item.wire_cutter,คัตร์ตัดสาย
+,item.wiretap_recording,เสียงบันทึกจากสายดักฟัง
+,light.ceiling_strip,หลอดไฟเพดาน
+,light.desk_lamp,ไฟโต๊ะ
+,light.emergency_lamp,ไฟฉุกเฉิน
+,light.floodlight,ไฟฉายส่องกว้าง
+,light.ir_watchlight,ไฟอินฟราเรด
+,light.motion_sensor,ไฟตรวจจับการเคลื่อนไหว
+,light.pendant,โคมไฟแขวน
+,light.searchlight,ไฟส่องเป้า
+,lighting.black_site,แสงสว่างสถานที่ลับ
+,lighting.commercial,แสงสว่างพาณิชย์
+,lighting.high_security,แสงสว่างความปลอดภัยสูง
+,lighting.industrial,แสงสว่างอุตสาหกรรม
+,lighting.industrial_secure,แสงสว่างอุตสาหกรรมความปลอดภัย
+,lighting.residential,แสงสว่างที่พักอาศัย
+,loyalty.drift.burnout,หมดไฟ
+,loyalty.drift.facility,สภาพแจ่งหมวก
+,loyalty.drift.facility_good,สภาพแจ่งหมวกดี
+,loyalty.drift.idle,ปล่อยว่าง
+,loyalty.drift.mission_loss,ภารกิจล้มเหลว
+,loyalty.drift.mission_success,ภารกิจสำเร็จ
+,loyalty.drift.overworked,ทำงานหนักเกินไป
+,loyalty.drift.pay_fair,จ่ายค่าจ้างยุติธรรม
+,loyalty.drift.pay_unfair,จ่ายค่าจ้างต่ำกว่าตลาด
+,loyalty.drift.roommate,เพื่อนร่วมห้องไม่ถูกเคย
+,loyalty.drift.workload,ภาระหนัก
+,loyalty.escalation.complaint,ร้องเรียน
+,loyalty.escalation.defection,ลักลอกข้อมูลให้ฝ่ายตรงข้าม
+,loyalty.escalation.raise_demand,เรียกร้องขึ้นเงินเดือน
+,loyalty.escalation.resignation_notice,ยื่นเรื่องขอลาออก
+,melee.bare_hands,มือเปล่า
+,melee.crowbar,ไม้ตรึง
+,melee.fireaxe,ขวดนมทะเล
+,melee.knife,มีด
+,melee.silenced_pistol,ปืนเงียบ
+,melee.taser,ปืนไฟฟ้า
+,melee.truncheon,กระบอง
+,melee.unarmed_shove,ผลัก
+,melee.unarmed_wire,สายล่อ
 ,mission.assassinate_t1,ลอบสังหาร (ระดับ 1)
 ,mission.assassinate_t2,ลอบสังหาร (ระดับ 2)
 ,mission.assassinate_t3,ลอบสังหาร (ระดับ 3)
-,mission.rescue_t1,ช่วยเหลือ (ระดับ 1)
-,mission.rescue_t2,ช่วยเหลือ (ระดับ 2)
-,mission.rescue_t3,ช่วยเหลือ (ระดับ 3)
 ,mission.plant_bug_t1,วางอุปกรณ์ดัก (ระดับ 1)
 ,mission.plant_bug_t2,วางอุปกรณ์ดัก (ระดับ 2)
 ,mission.plant_bug_t3,วางอุปกรณ์ดัก (ระดับ 3)
 ,mission.recon_t1,สำรวจล้วง (ระดับ 1)
 ,mission.recon_t2,สำรวจล้วง (ระดับ 2)
 ,mission.recon_t3,สำรวจล้วง (ระดับ 3)
-,node.server_rack,ตู้เซิร์ฟเวอร์
-,node.security_office,ห้องรักษาความปลอดภัย
-,node.corridor,ทางเดิน
-,node.office,ห้องทำงาน
-,node.vault,ห้องเก็บทรัพย์
-,node.archive,ห้องเอกสาร
-,node.lab,ห้องทดลอง
-,node.hq_lobby,ล็อบบี้สำนักใหญ่
-,node.warehouse,คลังสินค้า
-,node.data_centre,ศูนย์ข้อมูล
-,node.meeting_room,ห้องประชุม
-,node.bunker,ห้องป้องกันขั้นสูง
-,node.satellite_uplink,สถานีส่งสัญญาณ
-,node.research_lab,ห้องวิจัย
-,node.private_collection,ห้องสะสมของมีค่า
-,node.detention_block,ห้องคุมขัง
-,node.parking_structure,ที่จอดรถ
-,node.staff_kitchen,ครัวพนักงาน
-,gadget.lockpick_set,ชุดชักลอก
-,gadget.wire_cutter,คัตร์ตัดสาย
-,gadget.thermal_cutter,คัตร์ตัดความร้อน
-,gadget.signal_jammer,เครื่องกลบกวนสัญญาณ
-,gadget.voice_mimic,อุปกรณ์เลียนเสียง
-,gadget.forensic_kit,ชุดตรวจหลักฐาน
-,gadget.medkit,ชุดปฐมพยาบาล
-,gadget.stimulant,ยากระตุ้น
-,gadget.calming_draft,ยาคลายเครียด
-,gadget.recon_scope,กล้องสำรวจ
-,gadget.lockbypass_card,บัตรผ่านระบบล็อก
-,gadget.decoy_charge,ระเบิดหลอก
-,item.lockpick_set,ชุดชักลอก
-,item.wire_cutter,คัตร์ตัดสาย
-,item.thermal_cutter,คัตร์ตัดความร้อน
-,item.signal_jammer,เครื่องกลบกวนสัญญาณ
-,item.voice_mimic,อุปกรณ์เลียนเสียง
-,item.forensic_kit,ชุดตรวจหลักฐาน
-,item.medkit,ชุดปฐมพยาบาล
-,item.stimulant,ยากระตุ้น
-,item.calming_draft,ยาคลายเครียด
-,item.ration_pack,ชุดอาหาร
-,item.intel_dossier,เอกสารข่าวกรอง
-,item.encrypted_drive,ไดรฟ์เข้ารหัส
-,item.coded_ledger,บัญชีรหัส
-,item.contact_list,รายชื่อผู้ติดต่อ
-,item.emerald_pendant,จี้มรกต
-,item.bearer_bond,ตราสัญลักษณ์ผู้ถือ
-,item.rare_briefcase,กระเป๋าหายาก
-,item.antique_seal,ตราประทับโบราณ
-,item.evidence_tape,เทปหลักฐาน
-,item.evidence_logbook,สมุดบันทึกหลักฐาน
-,item.fingerprints,ลายนิ้วมือ
-,item.wiretap_recording,เสียงบันทึกจากสายดักฟัง
-,trait.photographic_memory,ความจำแบบภาพ
-,trait.desc.photographic_memory,จำสิ่งที่เห็นได้ทั้งหมด แล้วนึกออกได้แม้แต่รายละเอียดเล็ก
-,trait.calm_under_fire,คงสงบภายใต้ความกดดัน
-,trait.desc.calm_under_fire,ยิ่งเผชิญความเสี่ยง ยิ่งตั้งสติได้ดี ไม่คิดมากเกินไป
-,trait.lockpick_touch,สัมผัสการชักลอก
-,trait.desc.lockpick_touch,เปิดกุญแจได้เร็วและแม่นยำจนไม่ต้องฝืนแรง
-,trait.safe_hands,มือนิ่ง
-,trait.desc.safe_hands,ทำงานละเอียดได้โดยไม่พลาดพลั้ง แต่ใช้เวลานานกว่าคนอื่น
-,trait.reads_people,อ่านคนออก
-,trait.desc.reads_people,สังเกตจุดอ่อนของคนอื่นได้จากภาษาที่พูด
-,trait.compulsive,ติดยึด
-,trait.desc.compulsive,เจาะลึกจนลืมเวลา ได้ผลดีมากเมื่อไม่มีเสียงรบกวน
-,trait.quiet_breathing,ลมหายใจเงียบ
-,trait.desc.quiet_breathing,เคลื่อนไหวโดยไม่เกิดเสียง ระยะมองไกลขึ้นเมื่ออยู่นิ่ง
-,trait.street_wise,ชำนาญทางเดิน
-,trait.desc.street_wise,รู้จักเส้นทางหลบหลังในเมือง ลดความเสี่ยงที่จะถูกจับได้
-,trait.paperwork,เก่งงานเอกสาร
-,trait.desc.paperwork,จัดการเอกสารได้อย่างเป็นระบบ ได้ข่าวกรองคุณภาพสูงขึ้น
-,trait.steady_hands,มือนิ่งหนักแน่น
-,trait.desc.steady_hands,หยิบของมีค่าไม่พลาดแม้กดดันหนัก
-,trait.night_owl,คนนอนดึก
-,trait.desc.night_owl,ตื่นตัวในเวลากลางคืน มองเห็นรายละเอียดในที่มืดได้มากกว่าคนอื่น
-,trait.charming,มีเสน่ห์
-,trait.desc.charming,ทำให้คนอื่นใจอ่อน ค่าใช้จ่ายในการจ้างลดลง
-,trait.clumsy,ซุ่มซ่าม
-,trait.desc.clumsy,ทำของตกหล่นบ่อย อาจทำของมีค่าเสียหาย
-,trait.hot_headed,อารมณ์ไว
-,trait.desc.hot_headed,ใจเร็วแต่หุนหวัดง่าย เพิ่มความเสี่ยงที่จะเกิดเสียงดัง
-,trait.greedy,โลภ
-,trait.desc.greedy,สนใจเงินมากกว่าภารกิจ ใจน้อยลงเรื่อย ๆ ทุกสัปดาห์
-,trait.insomniac,นอนไม่หลับ
-,trait.desc.insomniac,สมองยังไม่หยุดคิดตอนกลางคืน ฟื้นฟูสุขภาพจิตได้ช้าลง
-,trait.patient,ใจเย็น
-,trait.desc.patient,ทำงานช้า ไม่รีบร้อน ความเสียงรบกวนน้อยกว่าที่ควร
-,trait.absent_minded,ใจลอย
-,trait.desc.absent_minded,คิดไปคนละทาง ฝึกทักษะได้ช้ากว่าปกติ
-,trait.drinker,ติดเหล้า
-,trait.desc.drinker,ดื่มมากเกินไป ใจน้อยลงและผลงานตกอย่างต่อเนื่อง
-,trait.paranoid,ขี้ระแวง
-,trait.desc.paranoid,ไม่ไว้ใจใคร ทำให้บรรยากาศในทีมแย่ลง
-,trait.weak_stomach,ท้องอ่อน
-,trait.desc.weak_stomach,ทนความกดดันทางกายไม่ไหว ฟื้นฟูพลังกายได้ช้า
-,trait.slow_learner,เรียนช้า
-,trait.desc.slow_learner,ต้องฝึกนานกว่าคนอื่นมากถึงจะพัฒนาได้
-,trait.blunt,พูดตรงเกินไป
-,trait.desc.blunt,ไม่เคยอ้อมค้อม ทำให้การเจรจายากขึ้น
-,trait.coward,ขี้กลัว
-,trait.desc.coward,เมื่อถูกคุกคามจะหนี มีโอกาสถูกจับได้สูง
-,trait.mole,ตัวร้าย
-,trait.desc.mole,ลอบส่งข่าวให้ฝ่ายตรงข้าม เพิ่มระดับความเสี่ยงอย่างเงียบ ๆ
-,trait.deserter,พร้อมหนี
-,trait.desc.deserter,เมื่อถูกคุกคามหนักมีโอกาสทิ้งที่แล้วหนีกลับ
-,trait.double_agent,ตัวดำ
-,trait.desc.double_agent,ทำงานให้ทั้งสองฝ่าย ทำให้ข่าวกรองเป็นเท็จเป็นความจริง
-,trait.gambler,นักพนัน
-,trait.desc.gambler,เสี่ยงโชคจนเกินตัว อาจทำเงินหายไปเป็นก้อน
-,trait.addict,ติดยา
-,trait.desc.addict,เสพสารเพื่อให้ทำงานได้ต่อ ร่างกายทรุดลงเร็ว
-,trait.patriot,สายก่อตั้ง
-,trait.desc.patriot,เชื่อมั่นองค์กรอย่างแน่นอน ลดความสนใจจากงานขององค์กรได้มาก
-,event.patch_firewall,เจาะระบบกันไฟร์วอลล์
-,event.nar.patch_firewall,เจาะระบบกันไฟร์วอลล์
-,event.clone_credentials,โกงเครดิตฐานของพนักงาน
-,event.nar.clone_credentials,โกงเครดิตฐานของพนักงาน
-,event.bypass_biometric,หลบระบบสแกนลายนิ้วมือ
-,event.nar.bypass_biometric,หลบระบบสแกนลายนิ้วมือ
-,event.distract_guard,ลวกยามให้ออกไปทาง
-,event.nar.distract_guard,ลวกยามให้ออกไปทาง
-,event.timing_the_shift,ดูจังหวะเวรของยาม
-,event.nar.timing_the_shift,ดูจังหวะเวรของยาม
-,event.seduce_the_secretary,ล่อเลียนเลขานุการ
-,event.nar.seduce_the_secretary,ล่อเลียนเลขานุการ
-,event.sneak_past_patrol,แอบผ่านไปรอบตรวจ
-,event.nar.sneak_past_patrol,แอบผ่านไปรอบตรวจ
-,event.cross_the_firewall_of_jokes,เดินผ่านใต้การล้อเล่น
-,event.nar.cross_the_firewall_of_jokes,เดินผ่านใต้การล้อเล่น
-,event.blind_copy,ถ่ายเอกสารแบบเร็ว
-,event.nar.blind_copy,ถ่ายเอกสารแบบเร็ว
-,event.forge_signature,ปลอมลายเซ็น
-,event.nar.forge_signature,ปลอมลายเซ็น
-,event.photograph_the_ledger,ถ่ายรูปสมุดบัญชี
-,event.nar.photograph_the_ledger,ถ่ายรูปสมุดบัญชี
-,event.crack_the_vault,เจาะห้องเก็บทรัพย์
-,event.nar.crack_the_vault,เจาะห้องเก็บทรัพย์
-,event.lift_the_combination,เดารหัสตัวเลข
-,event.nar.lift_the_combination,เดารหัสตัวเลข
-,event.sprint_the_haul,วิ่งหนีพร้อมของ
-,event.nar.sprint_the_haul,วิ่งหนีพร้อมของ
-,event.index_the_archive,ทำดัชนีเอกสาร
-,event.nar.index_the_archive,ทำดัชนีเอกสาร
-,event.pick_the_shelved_file,หยิบแฟ้มที่ถูกเก็บไว้
-,event.nar.pick_the_shelved_file,หยิบแฟ้มที่ถูกเก็บไว้
-,event.photocopy_the_index,ถ่ายสำเนาดัชนี
-,event.nar.photocopy_the_index,ถ่ายสำเนาดัชนี
-,event.calibrate_the_spectrometer,ปรับเทียบเครื่องวิเคราะห์
-,event.nar.calibrate_the_spectrometer,ปรับเทียบเครื่องวิเคราะห์
-,event.contaminate_the_sample,ปนเปื้อนตัวอย่าง
-,event.nar.contaminate_the_sample,ปนเปื้อนตัวอย่าง
-,event.smuggle_the_centrifuge,ลักลอบเครื่องปั่น
-,event.nar.smuggle_the_centrifuge,ลักลอบเครื่องปั่น
-,event.blend_with_the_visitors,ปะปนไปกับผู้มาเยือน
-,event.nar.blend_with_the_visitors,ปะปนไปกับผู้มาเยือน
-,event.forge_a_badge,ปลอมบัตรผ่าน
-,event.nar.forge_a_badge,ปลอมบัตรผ่าน
-,event.read_the_guest_list,แอบดูรายชื่อแขก
-,event.nar.read_the_guest_list,แอบดูรายชื่อแขก
-,event.locate_the_manifest,ตามหาเอกสารบัญชีสินค้า
-,event.nar.locate_the_manifest,ตามหาเอกสารบัญชีสินค้า
-,event.forklift_accomplice,ช่วยเหลือคนงานรถยก
-,event.nar.forklift_accomplice,ช่วยเหลือคนงานรถยก
-,event.carry_the_crate,แบกลังออกไป
-,event.nar.carry_the_crate,แบกลังออกไป
-,event.rack_space_analysis,วิเคราะห์พื้นที่ตู้เซิร์ฟเวอร์
-,event.nar.rack_space_analysis,วิเคราะห์พื้นที่ตู้เซิร์ฟเวอร์
-,event.cool_the_mainframe,ทำให้เครื่องหลักเย็นลง
-,event.nar.cool_the_mainframe,ทำให้เครื่องหลักเย็นลง
-,event.tape_the_backups,ดึงข้อมูลสำรองออกมา
-,event.nar.tape_the_backups,ดึงข้อมูลสำรองออกมา
-,event.eavesdrop_at_the_table,แอบฟังข้างโต๊ะ
-,event.nar.eavesdrop_at_the_table,แอบฟังข้างโต๊ะ
-,event.talk_to_the_secretary,คุยกับเลขานุการ
-,event.nar.talk_to_the_secretary,คุยกับเลขานุการ
-,event.replace_the_minutes,แก้ไขรายงานประชุม
-,event.nar.replace_the_minutes,แก้ไขรายงานประชุม
-,event.disable_the_bunker_alarm,ปิดระบบเตือนภัยห้องป้องกัน
-,event.nar.disable_the_bunker_alarm,ปิดระบบเตือนภัยห้องป้องกัน
-,event.bypass_the_bunker_interlock,หลบระบบล็อกห้องป้องกัน
-,event.nar.bypass_the_bunker_interlock,หลบระบบล็อกห้องป้องกัน
-,event.tunnel_under_the_bunker,ขุดอุโมงใต้ห้องป้องกัน
-,event.nar.tunnel_under_the_bunker,ขุดอุโมงใต้ห้องป้องกัน
-,event.align_the_dish,เล็งจานรับสัญญาณ
-,event.nar.align_the_dish,เล็งจานรับสัญญาณ
-,event.burn_a_transmission,ส่งสัญญาณรบกวน
-,event.nar.burn_a_transmission,ส่งสัญญาณรบกวน
-,event.ride_the_maintenance_cycle,อาศัยช่วงเวลาที่เข้าบำรุง
-,event.nar.ride_the_maintenance_cycle,อาศัยช่วงเวลาที่เข้าบำรุง
-,event.sequence_the_genome,ถอดรหัสข้อมูลพันธุกรรม
-,event.nar.sequence_the_genome,ถอดรหัสข้อมูลพันธุกรรม
-,event.steal_the_research_notes,ขโมยบันทึกงานวิจัย
-,event.nar.steal_the_research_notes,ขโมยบันทึกงานวิจัย
-,event.sabotage_the_centrifuge_queue,ก่อมีปัญหาคิวของเครื่องปั่น
-,event.nar.sabotage_the_centrifuge_queue,ก่อมีปัญหาคิวของเครื่องปั่น
-,event.appraise_the_collection,ประเมินราคาของสะสม
-,event.nar.appraise_the_collection,ประเมินราคาของสะสม
-,event.case_the_gems,สำรวจเพชร
-,event.nar.case_the_gems,สำรวจเพชร
-,event.sell_to_the_fence,ขายต่อให้พ่อค้าซื้อของ
-,event.nar.sell_to_the_fence,ขายต่อให้พ่อค้าซื้อของ
-,event.free_the_informant,ช่วยผู้ให้การออกจากห้องคุมขัง
-,event.nar.free_the_informant,ช่วยผู้ให้การออกจากห้องคุมขัง
-,event.fake_the_transfer_order,ปลอมคำสั่งโยกย้าย
-,event.nar.fake_the_transfer_order,ปลอมคำสั่งโยกย้าย
-,event.seduce_the_warden,ล่อเลียนผู้คุม
-,event.nar.seduce_the_warden,ล่อเลียนผู้คุม
-,event.hotwire_the_gate,ต่อสายเปิดประตู
-,event.nar.hotwire_the_gate,ต่อสายเปิดประตู
-,event.time_the_barrier_drop,จับจังหวะราวประตูที่กำลังจะลง
-,event.nar.time_the_barrier_drop,จับจังหวะราวประตูที่กำลังจะลง
-,event.pickpocket_the_foreman,โจรกระเป๋าหัวหน้าคนงาน
-,event.nar.pickpocket_the_foreman,โจรกระเป๋าหัวหน้าคนงาน
-,event.steal_the_roster,ขโมยรายชื่อพนักงาน
-,event.nar.steal_the_roster,ขโมยรายชื่อพนักงาน
-,economy.loan.small,กู้เล็ก
-,economy.loan.medium,กู้กลาง
-,economy.loan.large,กู้ใหญ่
-,morale.band.devoted,เหนียวแน่น
+,mission.rescue_t1,ช่วยเหลือ (ระดับ 1)
+,mission.rescue_t2,ช่วยเหลือ (ระดับ 2)
+,mission.rescue_t3,ช่วยเหลือ (ระดับ 3)
+,mission.sabotage_t1,ทำลายระบบ (ระดับ 1)
+,mission.sabotage_t2,ทำลายระบบ (ระดับ 2)
+,mission.sabotage_t3,ทำลายระบบ (ระดับ 3)
+,mission.steal_data_t1,ขโมยข้อมูล (ระดับ 1)
+,mission.steal_data_t2,ขโมยข้อมูล (ระดับ 2)
+,mission.steal_data_t3,ขโมยข้อมูล (ระดับ 3)
 ,morale.band.content,พอใจ
-,morale.band.uneasy,ไม่สบายใจ
+,morale.band.devoted,เหนียวแน่น
 ,morale.band.resentful,ไม่พอใจ
-,loyalty.drift.overworked,ทำงานหนักเกินไป
-,loyalty.drift.workload,ภาระหนัก
-,loyalty.drift.idle,ปล่อยว่าง
-,loyalty.drift.mission_loss,ภารกิจล้มเหลว
-,loyalty.drift.mission_success,ภารกิจสำเร็จ
-,loyalty.drift.roommate,เพื่อนร่วมห้องไม่ถูกเคย
-,loyalty.drift.facility,สภาพแจ่งหมวก
-,loyalty.drift.facility_good,สภาพแจ่งหมวกดี
-,loyalty.drift.pay_fair,จ่ายค่าจ้างยุติธรรม
-,loyalty.drift.pay_unfair,จ่ายค่าจ้างต่ำกว่าตลาด
-,loyalty.drift.burnout,หมดไฟ
-,loyalty.escalation.complaint,ร้องเรียน
-,loyalty.escalation.raise_demand,เรียกร้องขึ้นเงินเดือน
-,loyalty.escalation.resignation_notice,ยื่นเรื่องขอลาออก
-,loyalty.escalation.defection,ลักลอกข้อมูลให้ฝ่ายตรงข้าม
+,morale.band.uneasy,ไม่สบายใจ
+,node.archive,ห้องเอกสาร
+,node.bunker,ห้องป้องกันขั้นสูง
+,node.corridor,ทางเดิน
+,node.data_centre,ศูนย์ข้อมูล
+,node.detention_block,ห้องคุมขัง
+,node.hq_lobby,ล็อบบี้สำนักใหญ่
+,node.lab,ห้องทดลอง
+,node.meeting_room,ห้องประชุม
+,node.office,ห้องทำงาน
+,node.parking_structure,ที่จอดรถ
+,node.private_collection,ห้องสะสมของมีค่า
+,node.research_lab,ห้องวิจัย
+,node.satellite_uplink,สถานีส่งสัญญาณ
+,node.security_office,ห้องรักษาความปลอดภัย
+,node.server_rack,ตู้เซิร์ฟเวอร์
+,node.staff_kitchen,ครัวพนักงาน
+,node.vault,ห้องเก็บทรัพย์
+,node.warehouse,คลังสินค้า
+,noise.alarm_raised,เสียงปลุกเสียงเตือน
+,noise.body_drag,เสียงลากศพ
+,noise.break_light,เสียงตีไฟ
+,noise.climb_ladder,เสียงปีนบันได
+,noise.crouch_step,เสียงย่องแบบเงียบ
+,noise.door_force,เสียงงัดประตู
+,noise.door_open,เสียงเปิดประตู
+,noise.hack_terminal,เสียงแฮกเครื่องปลายทาง
+,noise.lethal_shot,เสียงยิง
+,noise.locked_door_pick,เสียงไพเคาะกุญแจ
+,noise.melee_strike,เสียงโจมตีระยะปิด
+,noise.plant_device,เสียงวางอุปกรณ์
+,noise.radio_call,เสียงรายงานวิทยุ
+,noise.run_step,เสียงวิ่ง
+,noise.search_container,เสียงค้นหาสิ่งของ
+,noise.smoke_drop,เสียงปล่อยควัน
+,noise.switch_light,เสียงสวิตช์ไฟ
+,noise.takedown,เสียงจับตัวแบบไม่ฆ่า
+,noise.throw_land,เสียงของที่ขว้างลงพื้น
+,noise.vent_crawl,เสียงคลานในช่องระบาย
+,noise.walk_step,เสียงย่องเดิน
+,noise.window_open,เสียงเปิดหน้าต่าง
+,role.hacker,ผู้เจาะระบบ
+,role.hacker_support,ผู้เจาะระบบ (สนับสนุน)
+,role.handler,ผู้ปฏิบัติการ
+,role.medic,แพทย์สนาม
+,role.mule,คนลากของ
+,role.overwatch,ประจำตำแหน่งคุ้ม
+,role.pointman,หัวหน้ากลุ่ม
+,role.pointman_support,หัวหน้ากลุ่ม (สนับสนุน)
+,role.saboteur,ช่างวางเพลิง
+,role.scout,หน้าเฝ้า
+,role.sniper,นักยิง
+,room.archive,หอจดหมายเหตุ
+,room.armory,คลังอาวุธ
+,room.cafeteria,โรงอาหาร
+,room.command_room,ห้องบัญชาการ
+,room.comms_room,ห้องสื่อสาร
+,room.corridor,ทางเดิน
+,room.corridor_upper,ทางเดินชั้นบน
+,room.counter_intel,ห้องต่อต้านข่าวกรอง
+,room.decoy_front,หน้าต่างหลอก
+,room.detention,ห้องกักขัง
+,room.dorm,หอพัก
+,room.gym,ห้องยิม
+,room.hr,ห้องบุคคล
+,room.infirmary,ห้องพยาบาล
+,room.intel_archive,คลังข้อมูลลับ
+,room.isolation_chamber,ห้องกักแยก
+,room.lab,ห้องทดลอง
+,room.lobby,ล็อบบี้
+,room.lounge,ห้องพักผ่อน
+,room.meeting_room,ห้องประชุม
+,room.office,สำนักงานบริหาร
+,room.ops_center,ศูนย์บัญชาการ
+,room.parking,ที่จอดรถ
+,room.range,ห้องยิงปืน
+,room.records_office,ห้องเอกสาร
+,room.safe_room,ห้องหลบภัย
+,room.security_post,จุดยาม
+,room.server_hall,ห้องเซิร์ฟเวอร์ใหญ่
+,room.server_room,ห้องเซิร์ฟเวอร์
+,room.social_lab,ห้องทดลองสังคม
+,room.staff_kitchen,ห้องครัวพนักงาน
+,room.storage,ห้องเก็บของ
+,room.therapy_office,ห้องบำบัด
+,room.utility_crawl,ห้องระบบใต้ดิน
+,room.vault,ห้องปลอดภัยเก็บทรัพย์
+,room.workshop,ห้องประดิษฐ์
+,site.arms_depot,คลังอาวุธ
+,site.black_site,สถานที่ลับ
+,site.corner_shop,ร้านริมถนน
+,site.corporate_hq,สำนักงานใหญ่บริษัท
+,site.data_centre,ศูนย์ข้อมูล
+,site.embassy_annexe,อาคารฝั่งสถานทูต
+,site.government_archive,หอเอกสารรัฐบาล
+,site.logistics_hub,ศูนย์โลจิสติกส์
+,site.municipal_office,อาคารราชการเทศบาล
+,site.private_clinic,คลินิกส่วนตัว
+,site.private_house,บ้านส่วนตัว
+,site.research_lab,ห้องวิจัย
+,site.security_hq,กองบัญชาการกรมรักษา
+,site.small_office,สำนักงานเล็ก
+,site.warehouse_district,ย่านคลังสินค้า
+,throwable.bolt,โบลต์
+,throwable.coffee_cup,แก้วกาแฟ
+,throwable.distraction,ของถ่วงความสนใจ
+,throwable.flare,ดอกไฟส่องสว่าง
+,throwable.grenade,ระเบิด
+,throwable.molotov,ขวดน้ำมันเพลิง
+,throwable.smoke_canister,กระปุกควัน
+,throwable.stone,ก้อนหิน
+,trait.absent_minded,ใจลอย
+,trait.addict,ติดยา
+,trait.blunt,พูดตรงเกินไป
+,trait.calm_under_fire,คงสงบภายใต้ความกดดัน
+,trait.charming,มีเสน่ห์
+,trait.clumsy,ซุ่มซ่าม
+,trait.compulsive,ติดยึด
+,trait.coward,ขี้กลัว
+,trait.desc.absent_minded,คิดไปคนละทาง ฝึกทักษะได้ช้ากว่าปกติ
+,trait.desc.addict,เสพสารเพื่อให้ทำงานได้ต่อ ร่างกายทรุดลงเร็ว
+,trait.desc.blunt,ไม่เคยอ้อมค้อม ทำให้การเจรจายากขึ้น
+,trait.desc.calm_under_fire,ยิ่งเผชิญความเสี่ยง ยิ่งตั้งสติได้ดี ไม่คิดมากเกินไป
+,trait.desc.charming,ทำให้คนอื่นใจอ่อน ค่าใช้จ่ายในการจ้างลดลง
+,trait.desc.clumsy,ทำของตกหล่นบ่อย อาจทำของมีค่าเสียหาย
+,trait.desc.compulsive,เจาะลึกจนลืมเวลา ได้ผลดีมากเมื่อไม่มีเสียงรบกวน
+,trait.desc.coward,เมื่อถูกคุกคามจะหนี มีโอกาสถูกจับได้สูง
+,trait.desc.deserter,เมื่อถูกคุกคามหนักมีโอกาสทิ้งที่แล้วหนีกลับ
+,trait.desc.double_agent,ทำงานให้ทั้งสองฝ่าย ทำให้ข่าวกรองเป็นเท็จเป็นความจริง
+,trait.desc.drinker,ดื่มมากเกินไป ใจน้อยลงและผลงานตกอย่างต่อเนื่อง
+,trait.desc.gambler,เสี่ยงโชคจนเกินตัว อาจทำเงินหายไปเป็นก้อน
+,trait.desc.greedy,สนใจเงินมากกว่าภารกิจ ใจน้อยลงเรื่อย ๆ ทุกสัปดาห์
+,trait.desc.hot_headed,ใจเร็วแต่หุนหวัดง่าย เพิ่มความเสี่ยงที่จะเกิดเสียงดัง
+,trait.desc.insomniac,สมองยังไม่หยุดคิดตอนกลางคืน ฟื้นฟูสุขภาพจิตได้ช้าลง
+,trait.desc.lockpick_touch,เปิดกุญแจได้เร็วและแม่นยำจนไม่ต้องฝืนแรง
+,trait.desc.mole,ลอบส่งข่าวให้ฝ่ายตรงข้าม เพิ่มระดับความเสี่ยงอย่างเงียบ ๆ
+,trait.desc.night_owl,ตื่นตัวในเวลากลางคืน มองเห็นรายละเอียดในที่มืดได้มากกว่าคนอื่น
+,trait.desc.paperwork,จัดการเอกสารได้อย่างเป็นระบบ ได้ข่าวกรองคุณภาพสูงขึ้น
+,trait.desc.paranoid,ไม่ไว้ใจใคร ทำให้บรรยากาศในทีมแย่ลง
+,trait.desc.patient,ทำงานช้า ไม่รีบร้อน ความเสียงรบกวนน้อยกว่าที่ควร
+,trait.desc.patriot,เชื่อมั่นองค์กรอย่างแน่นอน ลดความสนใจจากงานขององค์กรได้มาก
+,trait.desc.photographic_memory,จำสิ่งที่เห็นได้ทั้งหมด แล้วนึกออกได้แม้แต่รายละเอียดเล็ก
+,trait.desc.quiet_breathing,เคลื่อนไหวโดยไม่เกิดเสียง ระยะมองไกลขึ้นเมื่ออยู่นิ่ง
+,trait.desc.reads_people,สังเกตจุดอ่อนของคนอื่นได้จากภาษาที่พูด
+,trait.desc.safe_hands,ทำงานละเอียดได้โดยไม่พลาดพลั้ง แต่ใช้เวลานานกว่าคนอื่น
+,trait.desc.slow_learner,ต้องฝึกนานกว่าคนอื่นมากถึงจะพัฒนาได้
+,trait.desc.steady_hands,หยิบของมีค่าไม่พลาดแม้กดดันหนัก
+,trait.desc.street_wise,รู้จักเส้นทางหลบหลังในเมือง ลดความเสี่ยงที่จะถูกจับได้
+,trait.desc.weak_stomach,ทนความกดดันทางกายไม่ไหว ฟื้นฟูพลังกายได้ช้า
+,trait.deserter,พร้อมหนี
+,trait.double_agent,ตัวดำ
+,trait.drinker,ติดเหล้า
+,trait.gambler,นักพนัน
+,trait.greedy,โลภ
+,trait.hot_headed,อารมณ์ไว
+,trait.insomniac,นอนไม่หลับ
+,trait.lockpick_touch,สัมผัสการชักลอก
+,trait.mole,ตัวร้าย
+,trait.night_owl,คนนอนดึก
+,trait.paperwork,เก่งงานเอกสาร
+,trait.paranoid,ขี้ระแวง
+,trait.patient,ใจเย็น
+,trait.patriot,สายก่อตั้ง
+,trait.photographic_memory,ความจำแบบภาพ
+,trait.quiet_breathing,ลมหายใจเงียบ
+,trait.reads_people,อ่านคนออก
+,trait.safe_hands,มือนิ่ง
+,trait.slow_learner,เรียนช้า
+,trait.steady_hands,มือนิ่งหนักแน่น
+,trait.street_wise,ชำนาญทางเดิน
+,trait.weak_stomach,ท้องอ่อน
+,objective.steal_data,ขโมยข้อมูล
+,objective.sabotage,ทำลายระบบ
+,objective.assassinate,ลอมสังหัต
+,objective.rescue,ช่วยเหลือตัวประกัน
+,objective.plant_bug,วางอุปกรณ์ดักฟัง
+,objective.recon,ล้วงพยั่ว
+,ability.ping_last_known,ระบุตำแหน่งที่พบล่าสุด
+,ability.remote_door_unlock,ปลดล็อกประตูจากระยะไกล
+,ability.camera_feed,ภาพกล้องวงจรปิด
+,ability.request_extraction,เรียกรถดัก
+,ability.emergency_smoke,ปล่อยควันฉุกเฉิน
+,resolve.clean_success,สำเร็จอย่างสะอาด
+,resolve.success,สำเร็จ
+,resolve.compromised,ถูกตรวจพบ
+,resolve.aborted,ยกเลิกภารกิจ
+,resolve.disaster,พินาศ

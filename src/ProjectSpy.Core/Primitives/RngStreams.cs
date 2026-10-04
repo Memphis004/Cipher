@@ -32,10 +32,42 @@ public sealed class RngStreams
 
         /// <summary>Trait assignment and hidden-trait rolls.</summary>
         Trait = 4,
+
+        /// <summary>
+        /// Tactical mission simulation: perception rolls, noise, damage.
+        /// </summary>
+        /// <remarks>
+        /// Its own stream, separate from <see cref="Mission"/>, because mission
+        /// generation happens days before the mission is played. Sharing one stream
+        /// would mean regenerating a map shifted every perception roll that had
+        /// happened in between.
+        /// </remarks>
+        Tactical = 5,
+
+        /// <summary>
+        /// NPC planning: GOAP search order and tie-breaks.
+        /// </summary>
+        /// <remarks>
+        /// Separate from <see cref="Tactical"/> because a planner that draws an extra
+        /// node while searching would otherwise shift every roll the mission makes
+        /// afterwards, and a save would stop reproducing the moment the node budget
+        /// was tuned.
+        /// </remarks>
+        Goap = 6,
+
+        /// <summary>
+        /// Sleeper operations: intel accrual and discovery rolls.
+        /// </summary>
+        Sleeper = 7,
+
+        /// <summary>
+        /// Loot and container contents.
+        /// </summary>
+        Loot = 8,
     }
 
     /// <summary>Number of independent streams. Keep in sync with <see cref="StreamKind"/>.</summary>
-    public const int StreamCount = 5;
+    public const int StreamCount = 9;
 
     // Fixed ordinal layout so serialized state cannot drift when a member is added.
     private readonly XorShift128Rng[] _streams;

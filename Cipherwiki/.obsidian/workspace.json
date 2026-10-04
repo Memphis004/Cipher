@@ -4,17 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "1553ce5551532dfd",
+        "id": "bc4ecba9aab08572",
         "type": "tabs",
         "children": [
           {
-            "id": "c6065331e2d8af88",
+            "id": "ec111948e2aad2f0",
             "type": "leaf",
             "state": {
-              "type": "graph",
+              "type": "empty",
               "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -181,8 +181,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "c6065331e2d8af88",
+  "active": "ec111948e2aad2f0",
   "lastOpenFiles": [
+    "raw/doc/ARCHITECTURE.md",
+    "wiki/sources/ARCHITECTURE.md",
     "wiki/design/core-fantasy.md",
     "wiki/project-layout.md",
     "wiki/sources/README.md",
@@ -199,7 +201,6 @@
     "wiki/systems/game-clock.md",
     "wiki/systems/game-event-buffer.md",
     "wiki/systems/game-session.md",
-    "wiki/sources/ARCHITECTURE.md",
     "wiki/design/project-vision.md",
     "wiki/systems/tech-stack.md",
     "wiki/design/art-direction.md",
@@ -208,7 +209,6 @@
     "wiki/design/mission-and-fog-of-war.md",
     "wiki/design/base-building.md",
     "wiki/design/core-loop.md",
-    "wiki/design/agents.md",
     "wiki/systems",
     "wiki/sources",
     "wiki/queries",

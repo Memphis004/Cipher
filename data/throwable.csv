@@ -1,0 +1,10 @@
+##var,id,name_key,range_cm,arc_degrees,damage,noise_profile_id,is_lethal,uses,heat_cost,evidence_level,gadget_id
+##type,int,string,int,int,int,int,bool,int,int,int,int
+,12451,throwable.stone,600,30,3,12312,0,3,0,0,0
+,12452,throwable.bolt,900,25,8,12312,0,4,0,2,0
+,12453,throwable.distraction,1400,45,0,12312,0,3,0,0,0
+,12454,throwable.smoke_canister,1000,40,0,12322,0,2,4,10,0
+,12455,throwable.flare,1600,35,0,12312,0,2,6,15,0
+,12456,throwable.grenade,1200,30,45,12315,1,2,30,60,0
+,12457,throwable.molotov,1100,35,40,12318,1,2,25,55,0
+,12458,throwable.coffee_cup,500,20,1,12312,0,6,0,0,0

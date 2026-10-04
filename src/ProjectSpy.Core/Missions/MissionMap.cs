@@ -126,6 +126,53 @@ public sealed class MissionNode
     /// </remarks>
     public int LootTableId { get; private set; }
 
+    /// <summary>
+    /// How many guards this node's interior will contain.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Decided by the generator and committed here, from
+    /// <c>room_template.guard_max</c> and the node's security status — <b>not</b>
+    /// read back out of the interior once one exists.
+    /// </para>
+    /// <para>
+    /// That distinction is the whole reason this field is on the skeleton. Fog of war
+    /// has to be able to report a guard-count band for a node the player has only
+    /// scouted, but at that moment the interior does not exist (knowledge.md's lazy
+    /// content rule). Deriving the band from the contents would mean generating them
+    /// to answer a question about a room nobody has entered — which is exactly the
+    /// leak the rule exists to prevent. So the count is promised here, the interior
+    /// generator honours the promise, and a test asserts the two agree.
+    /// </para>
+    /// </remarks>
+    public int GuardCount { get; private set; }
+
+    /// <summary>
+    /// The coarse guard count a <see cref="MissionVisibility.Scouted"/> sight reports.
+    /// </summary>
+    /// <remarks>
+    /// A band rather than a number on purpose: the player is told whether a room is
+    /// dangerous, not how many individual guards to walk past, and a band is far
+    /// cheaper to balance than an exact count.
+    /// </remarks>
+    public GuardBand GuardBand => GuardBandFor(GuardCount);
+
+    /// <summary>
+    /// Buckets a guard count using the <c>fog_rule</c> thresholds.
+    /// </summary>
+    /// <remarks>
+    /// Public because it is a rule in its own right and a test needs to pin the buckets
+    /// independently of the generator — a band that drifted would misreport every room
+    /// on the map without any single map looking wrong.
+    /// </remarks>
+    public static GuardBand GuardBandFor(int guardCount)
+        => guardCount switch
+        {
+            <= 0 => GuardBand.None,
+            _ when guardCount >= SimulationRules.Fog("fog_guard_band_many_min", GuardBandFallbacks.ManyMin) => GuardBand.Many,
+            _ => GuardBand.Few,
+        };
+
     /// <summary>True when the node's tags include <c>security</c>.</summary>
     public bool IsSecurity => Tags.Contains(TagSecurity);
 
@@ -148,6 +195,22 @@ public sealed class MissionNode
     /// </remarks>
     internal void AssignLoot(int lootTableId) => LootTableId = lootTableId;
 
+    /// <summary>
+    /// Commits this node's guard count. Generator-time only, for the same reason as
+    /// <see cref="AssignLoot"/> — and see <see cref="GuardCount"/> for why the count
+    /// has to be known before the interior exists.
+    /// </summary>
+    internal void AssignGuardCount(int guardCount) => GuardCount = Math.Max(0, guardCount);
+
+    /// <summary>
+    /// Documented fallbacks used only when <c>fog_rule</c> is unavailable. They mirror
+    /// the shipped table; the validator is what actually keeps them honest.
+    /// </summary>
+    internal static class GuardBandFallbacks
+    {
+        internal const int ManyMin = 2;
+    }
+
     /// <summary>True when this node carries every tag in <paramref name="required"/>.</summary>
     public bool HasAllTags(IEnumerable<string> required)
     {
@@ -159,6 +222,26 @@ public sealed class MissionNode
 
         return true;
     }
+}
+
+/// <summary>
+/// How heavily guarded a node is, as far as a scouted player can tell.
+/// </summary>
+/// <remarks>
+/// Ordered but not a real scale, so it is named rather than numbered by severity in
+/// the enum: "many" is not defined as more dangerous than "few" by some fixed
+/// multiple, it just means the room is not a place to walk into casually.
+/// </remarks>
+public enum GuardBand
+{
+    /// <summary>Nobody is home.</summary>
+    None = 0,
+
+    /// <summary>A token presence.</summary>
+    Few = 1,
+
+    /// <summary>This room is a fight, or a negotiation, and probably both.</summary>
+    Many = 2,
 }
 
 /// <summary>

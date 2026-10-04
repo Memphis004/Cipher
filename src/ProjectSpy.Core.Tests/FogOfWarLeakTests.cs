@@ -252,6 +252,191 @@ public class FogOfWarLeakTests
         Assert.Equal(map.Nodes.Count, fog.ObservedNodeCount);
     }
 
+    // ---- the read model Presentation actually reads ------------------------
+
+    /// <summary>
+    /// A <see cref="FogView"/> must not be a way back to the simulation.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The stage-4 brief makes <c>FogView</c> the only thing Presentation may read, so
+    /// the property that matters is not what it shows but what it can reach. If a view
+    /// held a <see cref="MissionMap"/> or a <see cref="MissionNode"/>, every grade of
+    /// fog in it would be decorative: the UI could simply go round it.
+    /// </para>
+    /// <para>
+    /// Checked by shape rather than by reading each member, so adding a field that
+    /// happens to leak fails here without anyone having to notice it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void AFogViewCannotReachTheMapOrANode()
+    {
+        var offenders = new List<string>();
+
+        foreach (PropertyInfo property in typeof(FogView).GetProperties(
+                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
+        {
+            Type type = property.PropertyType;
+
+            bool handsOutNode = type == typeof(MissionNode)
+                               || type == typeof(MissionMap)
+                               || type == typeof(FogOfWar)
+                               || typeof(RoomContents).IsAssignableFrom(type);
+
+            bool collectionOfNodes = (type.IsArray && type.GetElementType() == typeof(MissionNode))
+                                     || (type.IsGenericType
+                                         && type.GetGenericArguments().Contains(typeof(MissionNode)));
+
+            if (handsOutNode || collectionOfNodes)
+                offenders.Add($"{nameof(FogView)}.{property.Name} : {type.Name}");
+        }
+
+        Assert.True(
+            offenders.Count == 0,
+            "FogView is Presentation's only sanctioned read surface, so it must not be a "
+            + "handle back into the simulation. Everything it exposes has to be a copy "
+            + "the fog rules already approved:\n  " + string.Join("\n  ", offenders));
+    }
+
+    /// <summary>
+    /// No member of the read model carries an interior, in any grade.
+    /// </summary>
+    /// <remarks>
+    /// The same guarantee as <see cref="NoPublicMemberExposesRoomContentsAsAValue"/>,
+    /// applied specifically to the two types the UI is expected to hold. Restated
+    /// because this is the surface that will actually be used, and a future edit that
+    /// adds a convenience <c>Contents</c> property to <see cref="FogNodeView"/> would
+    /// be invisible to a test that only looked at the whole assembly.
+    /// </remarks>
+    [Fact]
+    public void TheReadModelItselfNeverCarriesAnInterior()
+    {
+        foreach (Type type in new[] { typeof(FogView), typeof(FogNodeView), typeof(NodeIntel) })
+        {
+            foreach (PropertyInfo property in type.GetProperties())
+            {
+                Assert.False(
+                    ExposesContents(property.PropertyType),
+                    $"{type.Name}.{property.Name} hands out an interior; contents come from "
+                    + "FogOfWar.TryGetContents, keyed by a node the player has entered");
+            }
+
+            foreach (MethodInfo method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
+            {
+                Assert.False(
+                    ExposesContents(method.ReturnType),
+                    $"{type.Name}.{method.Name}() hands out an interior");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A Hidden node in the whole-map view shows no more than the per-node sight does.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Sight"/> existed before <see cref="FogView"/>, so the risk is not that
+    /// either leaks but that the newer one is more generous — a field added to
+    /// <see cref="BuildSight"/> for the map view and forgotten in the per-node path.
+    /// Comparing the two keeps them from drifting apart.
+    /// </remarks>
+    [Fact]
+    public void TheWholeMapViewHidesExactlyWhatThePerNodeSightHides()
+    {
+        MissionMap map = Map();
+        FogOfWar fog = new(map);
+
+        FogView view = fog.View();
+
+        foreach (MissionNode node in map.Nodes)
+        {
+            if (fog.StateOf(node.Id) != MissionVisibility.Hidden)
+                continue;
+
+            FogNodeView whole = view.Node(node.Id);
+            NodeSight single = fog.Sight(node.Id);
+
+            Assert.Equal(MissionVisibility.Hidden, whole.State);
+            Assert.True(whole.State == single.State);
+            Assert.Equal(single.Layer, whole.Layer);
+            Assert.Equal(string.Empty, whole.NameKey);
+            Assert.Empty(whole.Tags);
+            Assert.False(whole.HasLoot);
+            Assert.Equal(0, whole.BaseSecurity);
+            Assert.Equal(GuardBand.None, whole.Guards);
+            Assert.False(whole.HasIntel);
+            Assert.False(whole.HasInterior);
+        }
+    }
+
+    /// <summary>
+    /// Edges out of a hidden node reveal nothing about the far end.
+    /// </summary>
+    /// <remarks>
+    /// A view that listed edges but resolved them into the far node's data would leak
+    /// the entire map's shape from a single node. Ids are fine — knowing a door leads
+    /// somewhere is what makes a map a map — and resolving one must land on that node's
+    /// own view, at whatever grade it is entitled to.
+    /// </remarks>
+    [Fact]
+    public void FollowingAnEdgeFromAHiddenNodeReachesOnlyHiddenNodes()
+    {
+        MissionMap map = Map();
+        FogOfWar fog = new(map);
+        FogView view = fog.View();
+
+        foreach (FogNodeView node in view.Nodes)
+        {
+            if (node.State != MissionVisibility.Hidden)
+                continue;
+
+            foreach (MissionNodeId neighbour in node.EdgesTo)
+            {
+                Assert.True(
+                    view.Node(neighbour).State == MissionVisibility.Hidden,
+                    $"following {node.NodeId} -> {neighbour} revealed the neighbour");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A Scouted node reports a guard band but still exposes no interior.
+    /// </summary>
+    /// <remarks>
+    /// The band is drawn from the map's committed skeleton rather than the contents, so
+    /// this is the assertion that the two stay separate: the band exists for rooms the
+    /// player has not entered, and the interior still does not.
+    /// </remarks>
+    [Fact]
+    public void AScoutedNodeReportsAGuardBandWithoutExposingAnythingInside()
+    {
+        MissionMap map = Map();
+        FogOfWar fog = new(map);
+
+        int scouted = 0;
+
+        foreach (MissionNode node in map.NodesInLayer(2))
+        {
+            if (!fog.Scout(node.Id))
+                continue;
+
+            scouted++;
+
+            FogNodeView view = fog.View().Node(node.Id);
+
+            Assert.Equal(MissionVisibility.Scouted, view.State);
+            Assert.Equal(node.GuardBand, view.Guards);
+            Assert.True(view.HasIntel);
+            Assert.False(view.HasInterior);
+
+            // The interior genuinely does not exist yet, which is what makes the band
+            // above a promise rather than a summary.
+            Assert.False(fog.TryGetContents(node.Id, out _));
+        }
+
+        Assert.True(scouted > 0, "no nodes were scouted");
+    }
+
     // ---- helpers -------------------------------------------------------------
 
     /// <summary>

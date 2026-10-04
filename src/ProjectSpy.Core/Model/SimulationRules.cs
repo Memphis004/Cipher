@@ -1,3 +1,4 @@
+using ProjectSpy.Core.Missions;
 using ProjectSpy.Tables;
 
 // The generated manager class is named `Tables`, which collides with the
@@ -9,6 +10,75 @@ using GameTables = ProjectSpy.Tables.Tables;
 // are deliberately kept distinct (see data/README.md), so this alias marks every
 // crossing between them as an explicit conversion.
 using TableSkillKind = ProjectSpy.Tables.SkillKind;
+
+// Core already owns `InteractableType` (the enum) and `RoomContents`/`Room`, and the
+// generated beans are named `InteractableType` and `NodeInteriorTemplate`. The table enum is
+// aliased to InteractableKind below; these two rows are the same idea: the generated
+// bean is a *definition* of a kind, where Core's enum is a *resolved* value, so they
+// are kept as separate types and converted explicitly at the one crossing point.
+using InteractableTypeRow = ProjectSpy.Tables.InteractableType;
+using NodeInteriorTemplateRow = ProjectSpy.Tables.NodeInteriorTemplate;
+
+// The stage-2 tactical `room_template` is a different thing from the stage-1
+// `node_interior_template` that RoomTemplateFor below returns, and both are named
+// "room template". Aliased so that the two are never confused at a call site: the
+// node one describes an abstract node's contents in slot indices, the tactical one
+// describes a walkable interval on a floor.
+using TacticalRoomTemplateRow = ProjectSpy.Tables.RoomTemplate;
+using SiteTemplateRow = ProjectSpy.Tables.SiteTemplate;
+using ConnectionTypeRow = ProjectSpy.Tables.ConnectionType;
+using GuardArchetypeRow = ProjectSpy.Tables.GuardArchetype;
+using LightingProfileRow = ProjectSpy.Tables.LightingProfile;
+using LightSourceRow = ProjectSpy.Tables.LightSource;
+using NoiseProfileRow = ProjectSpy.Tables.NoiseProfile;
+using SiteGenRuleRow = ProjectSpy.Tables.SiteGenRule;
+using LootTableRow = ProjectSpy.Tables.LootTable;
+using SleeperOpRow = ProjectSpy.Tables.SleeperOp;
+using CaptureSiteRow = ProjectSpy.Tables.CaptureSite;
+using IntelRuleRow = ProjectSpy.Tables.IntelRule;
+
+// Stage 4c. The action system reads every one of these by name rather than by column
+// index, so the rows are aliased to their table names exactly as the stage-2 and 4b
+// tables are above. `ActionCategory` is used unaliased: Core deliberately has no
+// counterpart enum of its own (see the class remarks on rule 3 — a tactical action is
+// named by its row id, and Core re-reads the row rather than mirroring its columns).
+using TacticalActionRow = ProjectSpy.Tables.TacticalAction;
+using ActionCategory = ProjectSpy.Tables.ActionCategory;
+using ThrowableRow = ProjectSpy.Tables.Throwable;
+using MeleeWeaponRow = ProjectSpy.Tables.MeleeWeapon;
+using GadgetRow = ProjectSpy.Tables.Gadget;
+using ItemRow = ProjectSpy.Tables.Item;
+using GoapGoalRow = ProjectSpy.Tables.GoapGoal;
+using GoapActionRow = ProjectSpy.Tables.GoapAction;
+using GoapRuleRow = ProjectSpy.Tables.GoapRule;
+
+// Stage 4e. The squad layer reads four more tables, aliased the same way: the action
+// system's aliases exist because Core deliberately holds no counterpart type for an
+// action, and the same reasoning applies to a role, an objective rule, a support
+// ability and a resolve class — Core converts the table's enums at the crossing rather
+// than mirroring the rows.
+using AgentRoleRow = ProjectSpy.Tables.AgentRole;
+using SquadRuleRow = ProjectSpy.Tables.SquadRule;
+using ObjectiveRuleRow = ProjectSpy.Tables.ObjectiveRule;
+using AgentClassRow = ProjectSpy.Tables.AgentClass;
+using CommandPostAbilityRow = ProjectSpy.Tables.CommandPostAbility;
+using ResolveRuleRow = ProjectSpy.Tables.ResolveRule;
+using TableObjectiveType = ProjectSpy.Tables.ObjectiveType;
+using TableSupportAbility = ProjectSpy.Tables.SupportAbility;
+using TableResolveClass = ProjectSpy.Tables.ResolveClass;
+
+// The table enums for the three concepts that land in a generated SiteLayout. Core
+// keeps its own resolved values for these, numbered independently, so the crossing
+// is an explicit switch (see ToCoreConnectionKind) rather than a cast.
+using TableConnectionKind = ProjectSpy.Tables.ConnectionKind;
+using TableLightLevel = ProjectSpy.Tables.LightLevel;
+using TableGuardRole = ProjectSpy.Tables.GuardRole;
+
+// The table's interactable kinds and Core's. Values are shared (the table enum is
+// 1-based per __beans__.xml, Core's is 0-based and append-only), so the conversion is
+// an explicit switch rather than a cast — a cast would silently mis-map every kind if
+// either enum were ever renumbered.
+using TableInteractableKind = ProjectSpy.Tables.InteractableKind;
 
 namespace ProjectSpy.Core;
 
@@ -568,11 +638,139 @@ public static class SimulationRules
         }
 
         return fallback;
+    }/// <summary>Every <c>fog_rule</c> row, so the validator can prove the keys exist.</summary>
+    public static IReadOnlyList<FogRule> AllFog() => TablesOrNull?.TbFogRule.DataList ?? Array.Empty<FogRule>();
+
+    // ---- stage 4: interactables and room templates ---------------------------
+
+    /// <summary>An <c>interactable_type</c> row by id, or null.</summary>
+    public static InteractableTypeRow? InteractableTypeFor(int id)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbInteractableType.GetOrDefault(id);
     }
 
-    /// <summary>Every <c>fog_rule</c> row, so the validator can prove the keys exist.</summary>
-    public static IReadOnlyList<FogRule> AllFog()
-        => TablesOrNull?.TbFogRule.DataList ?? Array.Empty<FogRule>();
+    /// <summary>Every <c>interactable_type</c> row, in table order.</summary>
+    public static IReadOnlyList<InteractableTypeRow> AllInteractableTypes()
+        => TablesOrNull?.TbInteractableType.DataList ?? Array.Empty<InteractableTypeRow>();
+
+    /// <summary>
+    /// Every <c>interactable_type</c> whose <c>allowed_room_tags</c> intersects
+    /// <paramref name="roomTags"/>.
+    /// </summary>
+    /// <remarks>
+    /// An empty tag list means "allowed anywhere", which is how <c>Exit</c> and
+    /// <c>Container</c> stay available in every room without a row per room type.
+    /// </remarks>
+    public static IReadOnlyList<InteractableTypeRow> InteractableTypesForRoom(IReadOnlyList<string> roomTags)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null || roomTags is null) return Array.Empty<InteractableTypeRow>();
+
+        var allowed = new List<InteractableTypeRow>();
+
+        foreach (InteractableTypeRow row in t.TbInteractableType.DataList)
+        {
+            if (row.Weight <= 0)
+                continue;
+
+            IReadOnlyList<string> permitted = Tags(row.AllowedRoomTags);
+
+            if (permitted.Count == 0 || permitted.Any(tag => roomTags.Contains(tag)))
+                allowed.Add(row);
+        }
+
+        return allowed;
+    }
+
+    /// <summary>
+    /// The <c>room_template</c> for a node room, or null when it has none.
+    /// </summary>
+    /// <remarks>
+    /// Scanned rather than looked up, because <c>room_template</c> is keyed by its own
+    /// surrogate id and the query is by <c>node_room_id</c>. There are a couple of dozen
+    /// rows, so a scan is cheaper than any index and keeps a duplicate row a validator
+    /// error rather than an arbitrary choice.
+    /// </remarks>
+    public static NodeInteriorTemplateRow? RoomTemplateFor(int nodeRoomId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (NodeInteriorTemplateRow row in t.TbNodeInteriorTemplate.DataList)
+        {
+            if (row.NodeRoomId == nodeRoomId)
+                return row;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>room_template</c> row, for the validator.</summary>
+    public static IReadOnlyList<NodeInteriorTemplateRow> AllRoomTemplates()
+        => TablesOrNull?.TbNodeInteriorTemplate.DataList ?? Array.Empty<NodeInteriorTemplateRow>();
+
+    /// <summary>
+    /// Converts a table interactable kind to Core's <see cref="InteractableType"/>.
+    /// </summary>
+    /// <remarks>
+    /// An explicit switch rather than a cast. The two enums are numbered independently
+    /// — the table's is 1-based per <c>Defines/__beans__.xml</c>, Core's is 0-based and
+    /// append-only — so a cast would map every kind to the wrong value while still
+    /// compiling and still running. Writing the pairs out means renumbering either enum
+    /// turns into a compile error here instead of a building full of wrong rooms.
+    /// </remarks>
+    public static InteractableType ToCoreKind(TableInteractableKind kind) => kind switch
+    {
+        TableInteractableKind.Container => InteractableType.Container,
+        TableInteractableKind.Door => InteractableType.Door,
+        TableInteractableKind.Terminal => InteractableType.Terminal,
+        TableInteractableKind.Guard => InteractableType.Guard,
+        TableInteractableKind.Trap => InteractableType.Trap,
+        TableInteractableKind.Camera => InteractableType.Camera,
+        TableInteractableKind.Objective => InteractableType.Objective,
+        TableInteractableKind.Exit => InteractableType.Exit,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown interactable kind."),
+    };
+
+    /// <summary>The localization key for a kind, e.g. <c>interactable.guard</c>.</summary>
+    /// <remarks>
+    /// Derived from the enum name rather than stored in the table: the key is a naming
+    /// convention, and a column the designer can typo would fail silently at the point
+    /// where the label is needed.
+    /// </remarks>
+    public static string NameKeyFor(InteractableType type) => type switch
+    {
+        InteractableType.Container => "interactable.container",
+        InteractableType.Door => "interactable.door",
+        InteractableType.Terminal => "interactable.terminal",
+        InteractableType.Guard => "interactable.guard",
+        InteractableType.Trap => "interactable.trap",
+        InteractableType.Camera => "interactable.camera",
+        InteractableType.Objective => "interactable.objective",
+        InteractableType.Exit => "interactable.exit",
+        _ => "interactable.unknown",
+    };
+
+    /// <summary>
+    /// True when a kind may appear in a room carrying these tags.
+    /// </summary>
+    /// <remarks>
+    /// An empty <c>allowed_room_tags</c> means anywhere. Mirrors
+    /// <see cref="InteractableTypesForRoom"/> so a row that fails this check fails the
+    /// generator's candidate list too, rather than the two disagreeing about what a
+    /// room may contain.
+    /// </remarks>
+    public static bool IsKindAllowedIn(InteractableTypeRow row, IReadOnlyList<string> roomTags)
+    {
+        if (row is null || roomTags is null) return false;
+
+        IReadOnlyList<string> permitted = Tags(row.AllowedRoomTags);
+
+        return permitted.Count == 0 || permitted.Any(tag => roomTags.Contains(tag));
+    }
 
     /// <summary>Reads a <c>node_interior_rule</c> value by key, with a fallback.</summary>
     public static int NodeInterior(string key, int fallback)
@@ -594,6 +792,665 @@ public static class SimulationRules
     /// </summary>
     public static IReadOnlyList<NodeInteriorRule> AllNodeInterior()
         => TablesOrNull?.TbNodeInteriorRule.DataList ?? Array.Empty<NodeInteriorRule>();
+
+    // ---- stage 4a: site generation ------------------------------------------
+
+    /// <summary>
+    /// A <c>site_gen_rule</c> value by key, with a fallback.
+    /// </summary>
+    /// <remarks>
+    /// Every tunable the site generator reads lives here rather than in
+    /// <c>SiteGenerator</c>, for knowledge.md rule 3: a designer tuning how many
+    /// rooms a floor should hold, how often a door is locked or how far apart
+    /// light emitters sit should be editing a CSV, not asking a programmer.
+    /// <c>TableValidator</c> lists the keys it must contain, so deleting one is a
+    /// test failure rather than a silent fallback.
+    /// </remarks>
+    public static int SiteGen(string key, int fallback)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return fallback;
+
+        foreach (SiteGenRuleRow rule in t.TbSiteGenRule.DataList)
+        {
+            if (string.Equals(rule.RuleKey, key, StringComparison.Ordinal))
+                return rule.Value;
+        }
+
+        return fallback;
+    }
+
+    /// <summary>Every <c>site_gen_rule</c> row, so the validator can prove the keys exist.</summary>
+    public static IReadOnlyList<SiteGenRuleRow> AllSiteGen()
+        => TablesOrNull?.TbSiteGenRule.DataList ?? Array.Empty<SiteGenRuleRow>();
+
+    /// <summary>A <c>site_template</c> row by id, or null.</summary>
+    public static SiteTemplateRow? SiteTemplateFor(int siteTemplateId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbSiteTemplate.GetOrDefault(siteTemplateId);
+    }
+
+    /// <summary>Every <c>site_template</c> row, in table order.</summary>
+    public static IReadOnlyList<SiteTemplateRow> AllSiteTemplates()
+        => TablesOrNull?.TbSiteTemplate.DataList ?? Array.Empty<SiteTemplateRow>();
+
+    /// <summary>
+    /// A tactical <c>room_template</c> row by id, or null.
+    /// </summary>
+    /// <remarks>
+    /// Named to keep it apart from <see cref="RoomTemplateFor"/>, which returns a
+    /// <c>node_interior_template</c>. The two tables model opposite things — slot
+    /// indices for an abstract node versus a walkable interval on a floor — and a
+    /// single shared name for both was how the stage-2 rename of the node table
+    /// ended up being necessary.
+    /// </remarks>
+    public static TacticalRoomTemplateRow? TacticalRoomTemplateFor(int roomTemplateId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbRoomTemplate.GetOrDefault(roomTemplateId);
+    }
+
+    /// <summary>Every tactical <c>room_template</c> row, in table order.</summary>
+    public static IReadOnlyList<TacticalRoomTemplateRow> AllTacticalRoomTemplates()
+        => TablesOrNull?.TbRoomTemplate.DataList ?? Array.Empty<TacticalRoomTemplateRow>();
+
+    /// <summary>A <c>connection_type</c> row by id, or null.</summary>
+    public static ConnectionTypeRow? ConnectionTypeFor(int connectionTypeId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbConnectionType.GetOrDefault(connectionTypeId);
+    }
+
+    /// <summary>
+    /// The <c>connection_type</c> that a kind of connection defaults to.
+    /// </summary>
+    /// <remarks>
+    /// A kind is a category (Stair, Vent); a type is the specific row that says what
+    /// it costs and whether it blocks sight. Which row is "the" row for a kind is a
+    /// data question, so the first row in table order wins and the table is ordered
+    /// so that it is deliberate.
+    /// </remarks>
+    public static ConnectionTypeRow? DefaultConnectionTypeFor(SiteConnectionKind kind)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        SiteConnectionKind target = kind;
+
+        foreach (ConnectionTypeRow row in t.TbConnectionType.DataList)
+        {
+            if (ToCoreConnectionKind(row.Kind) == target)
+                return row;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>connection_type</c> row, in table order.</summary>
+    public static IReadOnlyList<ConnectionTypeRow> AllConnectionTypes()
+        => TablesOrNull?.TbConnectionType.DataList ?? Array.Empty<ConnectionTypeRow>();
+
+    /// <summary>A <c>guard_archetype</c> row by id, or null.</summary>
+    public static GuardArchetypeRow? GuardArchetypeFor(int archetypeId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbGuardArchetype.GetOrDefault(archetypeId);
+    }
+
+    /// <summary>Every <c>guard_archetype</c> row, in table order.</summary>
+    public static IReadOnlyList<GuardArchetypeRow> AllGuardArchetypes()
+        => TablesOrNull?.TbGuardArchetype.DataList ?? Array.Empty<GuardArchetypeRow>();
+
+    /// <summary>A <c>lighting_profile</c> row by id, or null.</summary>
+    public static LightingProfileRow? LightingProfileFor(int profileId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbLightingProfile.GetOrDefault(profileId);
+    }
+
+    /// <summary>A <c>light_source</c> row by id, or null.</summary>
+    public static LightSourceRow? LightSourceFor(int lightSourceId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbLightSource.GetOrDefault(lightSourceId);
+    }
+
+    /// <summary>Every <c>light_source</c> row, in table order.</summary>
+    public static IReadOnlyList<LightSourceRow> AllLightSources()
+        => TablesOrNull?.TbLightSource.DataList ?? Array.Empty<LightSourceRow>();
+
+    /// <summary>
+    /// The <c>loot_table</c> entries for one table id, in entry order.
+    /// </summary>
+    /// <remarks>
+    /// Scanned rather than looked up because <c>loot_table</c> is keyed by its own
+    /// surrogate id with a second, per-table entry id, and the query is by the first.
+    /// There are a couple of dozen entries, so a scan is cheaper than any index and keeps
+    /// a duplicate entry a validator error rather than an arbitrary choice.
+    /// </remarks>
+    public static IReadOnlyList<LootTableRow> LootEntriesFor(int lootTableId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return Array.Empty<LootTableRow>();
+
+        var entries = new List<LootTableRow>();
+        foreach (LootTableRow entry in t.TbLootTable.DataList)
+        {
+            if (entry.Id == lootTableId)
+                entries.Add(entry);
+        }
+
+        return entries;
+    }
+
+    /// <summary>A <c>noise_profile</c> row by id, or null.</summary>
+    public static NoiseProfileRow? NoiseProfileFor(int noiseProfileId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbNoiseProfile.GetOrDefault(noiseProfileId);
+    }
+
+    /// <summary>
+    /// Every <c>noise_profile</c> row, so the validator and the noise tests can prove
+    /// the rows the simulation relies on actually exist.
+    /// </summary>
+    public static IReadOnlyList<NoiseProfileRow> AllNoiseProfiles()
+        => TablesOrNull?.TbNoiseProfile.DataList ?? Array.Empty<NoiseProfileRow>();
+
+    /// <summary>
+    /// True when a room template is allowed on a floor of the given kind.
+    /// </summary>
+    /// <remarks>
+    /// Lives here rather than in the generator so that "which rooms may sit on a
+    /// basement" has exactly one answer, shared by the generator and the validator.
+    /// <see cref="ProjectSpy.Tables.FloorKind.Any"/> is the permissive case and
+    /// matches every floor.
+    /// </remarks>
+    public static bool IsRoomAllowedOnFloor(TacticalRoomTemplateRow row, SiteFloorKind floor)
+    {
+        if (row is null) return false;
+
+        return row.ValidFloors switch
+        {
+            FloorKind.Any => true,
+            FloorKind.Ground => floor == SiteFloorKind.Ground,
+            FloorKind.Upper => floor == SiteFloorKind.Upper,
+            FloorKind.Basement => floor == SiteFloorKind.Basement,
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Converts a table connection kind to Core's <see cref="SiteConnectionKind"/>.
+    /// </summary>
+    /// <remarks>
+    /// An explicit switch rather than a cast, for the reason given on
+    /// <see cref="ToCoreKind"/>: the two enums are numbered independently, so a cast
+    /// would silently mis-map every connection in the building while still compiling.
+    /// </remarks>
+    public static SiteConnectionKind ToCoreConnectionKind(TableConnectionKind kind) => kind switch
+    {
+        TableConnectionKind.Door => SiteConnectionKind.Door,
+        TableConnectionKind.LockedDoor => SiteConnectionKind.LockedDoor,
+        TableConnectionKind.Stair => SiteConnectionKind.Stair,
+        TableConnectionKind.Ladder => SiteConnectionKind.Ladder,
+        TableConnectionKind.Vent => SiteConnectionKind.Vent,
+        TableConnectionKind.Window => SiteConnectionKind.Window,
+        TableConnectionKind.Hole => SiteConnectionKind.Hole,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown connection kind."),
+    };
+
+    /// <summary>Inverse of <see cref="ToCoreConnectionKind"/>.</summary>
+    public static TableConnectionKind ToTableConnectionKind(SiteConnectionKind kind) => kind switch
+    {
+        SiteConnectionKind.Door => TableConnectionKind.Door,
+        SiteConnectionKind.LockedDoor => TableConnectionKind.LockedDoor,
+        SiteConnectionKind.Stair => TableConnectionKind.Stair,
+        SiteConnectionKind.Ladder => TableConnectionKind.Ladder,
+        SiteConnectionKind.Vent => TableConnectionKind.Vent,
+        SiteConnectionKind.Window => TableConnectionKind.Window,
+        SiteConnectionKind.Hole => TableConnectionKind.Hole,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown connection kind."),
+    };
+
+    /// <summary>Converts a table light level to Core's <see cref="SiteLightLevel"/>.</summary>
+    public static SiteLightLevel ToCoreLightLevel(TableLightLevel level) => level switch
+    {
+        TableLightLevel.Dark => SiteLightLevel.Dark,
+        TableLightLevel.Dim => SiteLightLevel.Dim,
+        TableLightLevel.Lit => SiteLightLevel.Lit,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, "Unknown light level."),
+    };
+
+    /// <summary>Inverse of <see cref="ToCoreLightLevel"/>.</summary>
+    public static TableLightLevel ToTableLightLevel(SiteLightLevel level) => level switch
+    {
+        SiteLightLevel.Dark => TableLightLevel.Dark,
+        SiteLightLevel.Dim => TableLightLevel.Dim,
+        SiteLightLevel.Lit => TableLightLevel.Lit,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, "Unknown light level."),
+    };
+
+    /// <summary>Converts a table guard role to Core's <see cref="SiteGuardRole"/>.</summary>
+    public static SiteGuardRole ToCoreGuardRole(TableGuardRole role) => role switch
+    {
+        TableGuardRole.Patrol => SiteGuardRole.Patrol,
+        TableGuardRole.Sentry => SiteGuardRole.Sentry,
+        TableGuardRole.Responder => SiteGuardRole.Responder,
+        TableGuardRole.Specialist => SiteGuardRole.Specialist,
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown guard role."),
+    };
+
+    /// <summary>Inverse of <see cref="ToCoreGuardRole"/>.</summary>
+    public static TableGuardRole ToTableGuardRole(SiteGuardRole role) => role switch
+    {
+        SiteGuardRole.Patrol => TableGuardRole.Patrol,
+        SiteGuardRole.Sentry => TableGuardRole.Sentry,
+        SiteGuardRole.Responder => TableGuardRole.Responder,
+        SiteGuardRole.Specialist => TableGuardRole.Specialist,
+        _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown guard role."),
+    };
+
+    // ---- stage 4b: pre-mission intel ----------------------------------------
+
+    /// <summary>Reads an <c>intel_rule</c> row by key, with a fallback.</summary>
+    public static int Intel(string key, int fallback)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return fallback;
+
+        foreach (IntelRuleRow rule in t.TbIntelRule.DataList)
+        {
+            if (rule.RuleKey == key)
+                return rule.Value;
+        }
+
+        return fallback;
+    }
+
+    /// <summary>
+    /// Every <c>intel_rule</c> row, so the validator can prove the keys the intel system
+    /// reads actually exist rather than falling back to an unapproved number.
+    /// </summary>
+    public static IReadOnlyList<IntelRuleRow> AllIntel()
+        => TablesOrNull?.TbIntelRule.DataList ?? Array.Empty<IntelRuleRow>();
+
+    /// <summary>The <c>sleeper_op</c> row for a site tier, or null.</summary>
+    public static SleeperOpRow? SleeperOpFor(int siteTier)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (SleeperOpRow op in t.TbSleeperOp.DataList)
+        {
+            if (op.SiteTier == siteTier)
+                return op;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>sleeper_op</c> row.</summary>
+    public static IReadOnlyList<SleeperOpRow> AllSleeperOps()
+        => TablesOrNull?.TbSleeperOp.DataList ?? Array.Empty<SleeperOpRow>();
+
+    /// <summary>The <c>capture_site</c> row for a tier, or null.</summary>
+    public static CaptureSiteRow? CaptureSiteFor(int siteTier)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (CaptureSiteRow capture in t.TbCaptureSite.DataList)
+        {
+            if (capture.SiteTier == siteTier)
+                return capture;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>capture_site</c> row.</summary>
+    public static IReadOnlyList<CaptureSiteRow> AllCaptureSites()
+        => TablesOrNull?.TbCaptureSite.DataList ?? Array.Empty<CaptureSiteRow>();
+
+    // ---- stage 4c: the tactical action set -----------------------------------
+
+    /// <summary>A <c>tactical_action</c> row by id, or null.</summary>
+    /// <remarks>
+    /// The stage-4c brief says "implement every row of tactical_action.csv", which
+    /// makes this table the action system's whole vocabulary. Reading it through one
+    /// accessor rather than reaching into Luban from the action system means there is
+    /// exactly one answer to "what does this action cost", and
+    /// <c>TableValidator</c> can assert that every row is reachable.
+    /// </remarks>
+    public static TacticalActionRow? TacticalActionFor(int actionId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbTacticalAction.GetOrDefault(actionId);
+    }
+
+    /// <summary>
+    /// The <c>tactical_action</c> id whose <c>name_key</c> matches, or zero.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// By name rather than by id because every caller of this wants an action's
+    /// <em>meaning</em> — "crouch-walk" — and a literal 12403 in a policy says only that
+    /// somebody once wrote down a number. Renumbering the table would otherwise silently
+    /// turn a cautious policy into a sprinting one, which is the kind of bug that only
+    /// shows up in a balance report six stages later.
+    /// </para>
+    /// <para>
+    /// Returns zero — which is <see cref="TacticalOrder.StopActionId"/> — rather than
+    /// throwing, so a caller that has no table loaded degrades to "do nothing" instead of
+    /// taking the process down. A missing action is a data error worth a loud test, not
+    /// worth a crash inside a 5,000-mission sweep.
+    /// </para>
+    /// </remarks>
+    public static int TacticalActionIdFor(string nameKey)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null || string.IsNullOrEmpty(nameKey))
+            return 0;
+
+        foreach (TacticalActionRow row in t.TbTacticalAction.DataList)
+        {
+            if (string.Equals(row.NameKey, nameKey, StringComparison.Ordinal))
+                return row.Id;
+        }
+
+        return 0;
+    }
+
+    /// <summary>Every <c>tactical_action</c> row, in table order.</summary>
+    public static IReadOnlyList<TacticalActionRow> AllTacticalActions()
+        => TablesOrNull?.TbTacticalAction.DataList ?? Array.Empty<TacticalActionRow>();
+
+    /// <summary>The <c>tactical_action</c> rows in one category, in table order.</summary>
+    public static IReadOnlyList<TacticalActionRow> TacticalActionsIn(ActionCategory category)
+    {
+        IReadOnlyList<TacticalActionRow> all = AllTacticalActions();
+        var matching = new List<TacticalActionRow>();
+
+        foreach (TacticalActionRow row in all)
+        {
+            if (row.Category == category)
+                matching.Add(row);
+        }
+
+        return matching;
+    }
+
+    /// <summary>A <c>throwable</c> row by id, or null.</summary>
+    public static ThrowableRow? ThrowableFor(int throwableId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbThrowable.GetOrDefault(throwableId);
+    }
+
+    /// <summary>Every <c>throwable</c> row, in table order.</summary>
+    public static IReadOnlyList<ThrowableRow> AllThrowables()
+        => TablesOrNull?.TbThrowable.DataList ?? Array.Empty<ThrowableRow>();
+
+    /// <summary>A <c>melee_weapon</c> row by id, or null.</summary>
+    public static MeleeWeaponRow? MeleeWeaponFor(int weaponId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbMeleeWeapon.GetOrDefault(weaponId);
+    }
+
+    /// <summary>Every <c>melee_weapon</c> row, in table order.</summary>
+    public static IReadOnlyList<MeleeWeaponRow> AllMeleeWeapons()
+        => TablesOrNull?.TbMeleeWeapon.DataList ?? Array.Empty<MeleeWeaponRow>();
+
+    /// <summary>A <c>gadget</c> row by id, or null.</summary>
+    /// <remarks>
+    /// Stage 4e needs two things from this table that nothing else wanted: how many uses
+    /// a gadget has left when an agent is handed one at dispatch, and how much it weighs,
+    /// because the brief makes total carry weight a dispatch gate. Both live here so
+    /// there is one answer to "what does gadget 8504 cost to carry".
+    /// </remarks>
+    public static GadgetRow? GadgetFor(int gadgetId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbGadget.GetOrDefault(gadgetId);
+    }
+
+    /// <summary>Every <c>gadget</c> row, in table order.</summary>
+    public static IReadOnlyList<GadgetRow> AllGadgets()
+        => TablesOrNull?.TbGadget.DataList ?? Array.Empty<GadgetRow>();
+
+    /// <summary>An <c>item</c> row by id, or null.</summary>
+    public static ItemRow? ItemFor(int itemId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbItem.GetOrDefault(itemId);
+    }
+
+    /// <summary>Every <c>item</c> row, in table order.</summary>
+    public static IReadOnlyList<ItemRow> AllItems()
+        => TablesOrNull?.TbItem.DataList ?? Array.Empty<ItemRow>();
+
+    /// <summary>A <c>goap_goal</c> row by id, or null.</summary>
+    public static GoapGoalRow? GoapGoalFor(int goalId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbGoapGoal.GetOrDefault(goalId);
+    }
+
+    /// <summary>Every <c>goap_goal</c> row, in table order.</summary>
+    public static IReadOnlyList<GoapGoalRow> AllGoapGoals()
+        => TablesOrNull?.TbGoapGoal.DataList ?? Array.Empty<GoapGoalRow>();
+
+    /// <summary>A <c>goap_action</c> row by id, or null.</summary>
+    public static GoapActionRow? GoapActionFor(int actionId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbGoapAction.GetOrDefault(actionId);
+    }/// <summary>Every <c>goap_action</c> row, in table order.</summary>
+    public static IReadOnlyList<GoapActionRow> AllGoapActions() => TablesOrNull?.TbGoapAction.DataList ?? Array.Empty<GoapActionRow>();
+
+    // ---- stage 4d: the GOAP planner ------------------------------------------
+
+    /// <summary>Reads a <c>goap_rule</c> row by key, with a fallback.</summary>
+    /// <remarks>
+    /// The stage-4d brief requires the planning budget to be a table value rather than
+    /// a constant: how many NPCs may replan in a single step is the knob that decides
+    /// whether 30 guards cost 2ms or 20ms, and a designer tuning a building's density
+    /// should be editing a CSV rather than calling a programmer. It sits in its own
+    /// <c>goap_rule</c> table for the same reason <c>intel_rule</c> and
+    /// <c>site_gen_rule</c> do — a tactical-AI budget filed under site generation would
+    /// be read by the next person as belonging there.
+    /// </remarks>
+    public static int Goap(string key, int fallback)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return fallback;
+
+        foreach (GoapRuleRow rule in t.TbGoapRule.DataList)
+        {
+            if (string.Equals(rule.RuleKey, key, StringComparison.Ordinal))
+                return rule.Value;
+        }
+
+        return fallback;
+    }
+
+    /// <summary>Every <c>goap_rule</c> row, so the validator can prove the keys exist.</summary>
+    public static IReadOnlyList<GoapRuleRow> AllGoapRules() => TablesOrNull?.TbGoapRule.DataList ?? Array.Empty<GoapRuleRow>();
+
+    // ---- stage 4e: the squad -------------------------------------------------
+
+    /// <summary>Reads a <c>squad_rule</c> row by key, with a fallback.</summary>
+    /// <remarks>
+    /// The stage-4e brief makes squad composition a decision the player makes under
+    /// constraints, and every one of those constraints is a number a designer will want
+    /// to move: how rested a team has to be, how much a squad may carry, how far apart a
+    /// following ally trails. They live in their own table rather than being appended to
+    /// <c>goap_rule</c> because a squad's parameters have nothing to do with how the
+    /// site's guards think, and a future reader of that table should not have to work
+    /// out which half is theirs.
+    /// </remarks>
+    public static int Squad(string key, int fallback)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return fallback;
+
+        foreach (SquadRuleRow rule in t.TbSquadRule.DataList)
+        {
+            if (string.Equals(rule.RuleKey, key, StringComparison.Ordinal))
+                return rule.Value;
+        }
+
+        return fallback;
+    }
+
+    /// <summary>Every <c>squad_rule</c> row, so the validator can prove the keys exist.</summary>
+    public static IReadOnlyList<SquadRuleRow> AllSquadRules() => TablesOrNull?.TbSquadRule.DataList ?? Array.Empty<SquadRuleRow>();
+
+    /// <summary>An <c>agent_role</c> row by id, or null.</summary>
+    /// <remarks>
+    /// The dispatch screen reads these to show what a role does and what it may be
+    /// ordered to do, and the squad validator reads them to check a composition against
+    /// the objective's required coverage. Both go through here so "what may a Hacker be
+    /// told to do" has one answer.
+    /// </remarks>
+    public static AgentRoleRow? AgentRoleFor(int roleId)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        return t.TbAgentRole.GetOrDefault(roleId);
+    }
+
+    /// <summary>
+    /// Every <c>agent_class</c> row, in table order.
+    /// </summary>
+    /// <remarks>
+    /// Read rather than hard-coded by anything that needs a class id. The test harness
+    /// kept its own consts for these, which was fine until a headless harness needed one
+    /// too and a literal would have meant renumbering the table silently re-roled every
+    /// agent in a balance report.
+    /// </remarks>
+    public static IReadOnlyList<AgentClassRow> AllAgentClasses()
+        => TablesOrNull?.TbAgentClass.DataList ?? Array.Empty<AgentClassRow>();
+
+    /// <summary>An <c>agent_class</c> row by <c>name_key</c>, or null.</summary>
+    public static AgentClassRow? AgentClassFor(string nameKey)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null || string.IsNullOrEmpty(nameKey))
+            return null;
+
+        foreach (AgentClassRow row in t.TbAgentClass.DataList)
+        {
+            if (string.Equals(row.NameKey, nameKey, StringComparison.Ordinal))
+                return row;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>agent_role</c> row, in table order.</summary>
+    public static IReadOnlyList<AgentRoleRow> AllAgentRoles() => TablesOrNull?.TbAgentRole.DataList ?? Array.Empty<AgentRoleRow>();
+
+    /// <summary>
+    /// The <c>objective_rule</c> row for one objective type, or null.
+    /// </summary>
+    /// <remarks>
+    /// One row per <see cref="TableObjectiveType"/> rather than a key/value table,
+    /// because the six objective types have genuinely different shapes of rule — a recon
+    /// needs a room count, a sabotage needs a blast interval, a rescue needs a follow
+    /// speed — and forcing them into one shared set of columns would mean most of the
+    /// table being zeros that mean "not applicable", which is a worse encoding than a
+    /// per-type row.
+    /// </remarks>
+    public static ObjectiveRuleRow? ObjectiveRuleFor(TableObjectiveType objectiveType)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (ObjectiveRuleRow row in t.TbObjectiveRule.DataList)
+        {
+            if (row.ObjectiveType == objectiveType)
+                return row;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>objective_rule</c> row, in table order.</summary>
+    public static IReadOnlyList<ObjectiveRuleRow> AllObjectiveRules() => TablesOrNull?.TbObjectiveRule.DataList ?? Array.Empty<ObjectiveRuleRow>();
+
+    /// <summary>A <c>command_post_ability</c> row by kind, or null.</summary>
+    public static CommandPostAbilityRow? CommandPostAbilityFor(TableSupportAbility ability)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (CommandPostAbilityRow row in t.TbCommandPostAbility.DataList)
+        {
+            if (row.Ability == ability)
+                return row;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>command_post_ability</c> row, in table order.</summary>
+    public static IReadOnlyList<CommandPostAbilityRow> AllCommandPostAbilities() => TablesOrNull?.TbCommandPostAbility.DataList ?? Array.Empty<CommandPostAbilityRow>();
+
+    /// <summary>The <c>resolve_rule</c> row for one outcome class, or null.</summary>
+    /// <remarks>
+    /// This is the whole reward model for a mission in one row per class, which is the
+    /// point of the table: "what does a compromised mission pay" is a single spreadsheet
+    /// cell rather than a switch spread across the debrief and the strategic layer.
+    /// </remarks>
+    public static ResolveRuleRow? ResolveRuleFor(TableResolveClass resolveClass)
+    {
+        GameTables? t = TablesOrNull;
+        if (t is null) return null;
+
+        foreach (ResolveRuleRow row in t.TbResolveRule.DataList)
+        {
+            if (row.ResolveClass == resolveClass)
+                return row;
+        }
+
+        return null;
+    }
+
+    /// <summary>Every <c>resolve_rule</c> row, in table order.</summary>
+    public static IReadOnlyList<ResolveRuleRow> AllResolveRules() => TablesOrNull?.TbResolveRule.DataList ?? Array.Empty<ResolveRuleRow>();
 
     // ---- helpers --------------------------------------------------------------
 

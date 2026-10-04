@@ -3,6 +3,17 @@
     "ai-game-developer": {
       "type": "http",
       "url": "http://localhost:25116/p/6c5c99b2"
+    },
+    "blender": {
+      "type": "local",
+      "command": [
+        "uv",
+        "--directory",
+        "C:\\blender_mcp\\mcp",
+        "run",
+        "blender-mcp"
+      ],
+      "enabled": true
     }
   }
 }

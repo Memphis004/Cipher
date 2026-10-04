@@ -1,0 +1,7 @@
+##var,id,ability,name_key,cooldown_steps,effect_value,requires_hacked_door,requires_room_target
+##type,int,SupportAbility,string,int,int,bool,bool
+,12851,PingLastKnown,ability.ping_last_known,900,4,0,0
+,12852,RemoteDoorUnlock,ability.remote_door_unlock,1800,1,1,0
+,12853,CameraFeed,ability.camera_feed,2700,600,0,1
+,12854,RequestExtraction,ability.request_extraction,36000,1,0,0
+,12855,EmergencySmoke,ability.emergency_smoke,5400,1,0,1

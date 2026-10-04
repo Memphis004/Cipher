@@ -120,6 +120,21 @@ Three reasons, in order of weight:
    can be asserted directly. A rule that reads "the terminal at x=4.2, y=-1.7
    is locked" needs a spatial setup to say anything at all.
 
+## Presentation-agnostic rule (added before Stage 4)
+Core never stores world-space coordinates, meshes, animation or camera data.
+A mission node's interior is an abstract `RoomContents`: a list of interactables
+(container, door, terminal, guard, trap, camera, objective, exit), each with a stable id,
+a type, a state and an abstract SlotIndex. Presentation maps slots to 2D, 2.5D or 3D
+positions however it likes. Walking around inside a room is presentation only.
+Every rule-affecting action is an ICommand with a tick cost, validated by Core.
+
+## Lazy content rule
+Contents of a node the team has not entered DO NOT EXIST in memory. They are generated
+on first entry from an RNG derived ONLY from (MapSeed, nodeId, "contents"), never from a
+shared stream. Consequence: the order in which a player explores must never change what
+any room contains. This is tested.
+
+
 ### Enforcement
 
 `CorePurityTests` rejects coordinate- and render-shaped types on Core's public

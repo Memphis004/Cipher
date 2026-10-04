@@ -19,6 +19,8 @@
       }
     }
   },
-
-  "model": "llama/Qwen3.8-27B-GSQ-RCO-IQ3_S-MTP.gguf"
+  "model": "stealth/space-bunny-alpha",
+  "reasoning": {
+    "effort": "high"
+  }
 }

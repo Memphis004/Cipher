@@ -1,0 +1,6 @@
+¯©goal.patrolflat:20!HasIntruder && !NoiseHeardany¯ªgoal.investigate_noisealarm:60,curiosity:40InspectedNoiseSourceany¯«goal.investigate_sightingalarm:70,curiosity:50ReachedLastKnownPositionany¯¬goal.pursue_targetalarm:90,curiosity:70TargetLostForStepsany¯­goal.call_for_backupalarm:85,composure:30BackupRequestedany¯®goal.raise_alarmalarm:95,composure:40AlarmRaisedany¯¯goal.take_coverself:75,alarm:40InCover && !Exposedany¯°goal.engageself:60,alarm:50
+TargetDowncombat¯±goal.flee_and_reportself:20,alarm:60OutsideDangerZoneany¯²goal.guard_objectiveflat:75!ObjectiveTampered
+specialist¯³goal.revive_allyally:80,composure:20AllyRevivedcombat¯´goal.secure_prisoneralarm:80,compliance:40PrisonerRestrained
+specialist¯µgoal.restore_powerself:50PowerRestored
+specialist¯¶goal.close_open_doororder:5SuspiciousDoorsClosedpatrol¯·goal.report_missing_colleaguealarm:75,composure:30ColleagueReportedMissingpatrol¯¸goal.go_about_businessflat:10DayFinishedcivilian¯¹
+goal.panicself:15,alarm:70SafeFromAlarmcivilian¯º	goal.fleeself:10,alarm:80ReachedSafePlacecivilian¯»	goal.hideself:25,alarm:60HiddenFromIntrudercivilian¯¼goal.report_to_guardalarm:85GuardReachedcivilian

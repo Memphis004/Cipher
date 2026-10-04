@@ -111,4 +111,171 @@
         <var name="Surname" value="2"/>
         <var name="Codename" value="3"/>
     </enum>
+
+    <!--
+      What an interactable fundamentally is, for a mission node's interior.
+
+      These are rule categories, not visual ones: the same Container resolves a d100
+      in a 2D and a 3D presentation. Core holds the kind and an abstract SlotIndex and
+      nothing about where that is on screen (knowledge.md rule 10), so adding a value
+      here is a rule change, not a rendering one.
+
+      Explicit and append-only, like every other enum in this file.
+    -->
+    <enum name="InteractableKind">
+        <!-- Searchable; yields loot or intel on a successful check. -->
+        <var name="Container" value="1"/>
+        <!-- Blocks a slot behind it until opened or forced. -->
+        <var name="Door" value="2"/>
+        <!-- A device that can be used, hacked, or scouted through. -->
+        <var name="Terminal" value="3"/>
+        <!-- A hostile presence with its own state. -->
+        <var name="Guard" value="4"/>
+        <!-- A hazard that triggers when a slot is entered. -->
+        <var name="Trap" value="5"/>
+        <!-- Watches a set of slots; raises alarm when it sees the team. -->
+        <var name="Camera" value="6"/>
+        <!-- What the mission is for. A room may hold at most one. -->
+        <var name="Objective" value="7"/>
+        <!-- The way out. A room may hold at most one. -->
+        <var name="Exit" value="8"/>
+    </enum>
+
+    <!--
+      How bright a stretch of floor is. Three states, not a number, because the
+      tactical model treats light as a category an entity is IN rather than a
+      quantity it accumulates: vision, noise reach and rendering all branch on
+      Lit/Dim/Dark, and a designer tuning "can a guard see a crouched agent in
+      shadow" wants three named bands, not a slider with no meaning at 0.37.
+
+      Append-only, like every other enum here.
+    -->
+    <enum name="LightLevel">
+        <!-- No emitter reaches here. Seen only as a silhouette. -->
+        <var name="Dark" value="1"/>
+        <!-- An emitter reaches here but weakly. Partial visibility. -->
+        <var name="Dim" value="2"/>
+        <!-- Fully inside an emitter's radius. -->
+        <var name="Lit" value="3"/>
+    </enum>
+
+    <!--
+      Which storey of the generated building a room may sit on. A continuous
+      building has a ground floor, upper floors and a basement, and the generator
+      uses this to stop putting a server room in the cellar.
+
+      Any = valid everywhere, which is what most templates want.
+    -->
+    <enum name="FloorKind">
+        <var name="Ground" value="1"/>
+        <var name="Upper" value="2"/>
+        <var name="Basement" value="3"/>
+        <var name="Any" value="4"/>
+    </enum>
+
+    <!--
+      What a tactical_action is for. Drives which input context menu shows it
+      under, and which squad role may issue it as an order.
+    -->
+    <enum name="ActionCategory">
+        <var name="Move" value="1"/>
+        <var name="Interact" value="2"/>
+        <var name="Combat" value="3"/>
+        <var name="Stealth" value="4"/>
+        <var name="Support" value="5"/>
+    </enum>
+
+    <!--
+      How a room's connections to its neighbours are placed. The generator needs
+      this to produce a building that reads as a building rather than a row of
+      boxes: a corridor's doors cluster, a vault has exactly one.
+
+      Explicit rather than a free-form rule string, because an unparsed string
+      column is exactly the kind of thing a designer typo turns into a building
+      with no exits.
+    -->
+    <enum name="DoorRule">
+        <!-- One connection, centred. Vaults and holding cells. -->
+        <var name="Single" value="1"/>
+        <!-- Connections spread evenly along the room's span. -->
+        <var name="EvenlySpaced" value="2"/>
+        <!-- Connections clustered at one end, like a stairwell lobby. -->
+        <var name="ClusteredEnd" value="3"/>
+        <!-- No horizontal connections at all; reached vertically only. -->
+        <var name="VerticalOnly" value="4"/>
+    </enum>
+
+    <!--
+      What kind of passage connects two spaces, and therefore what it costs to
+      cross and what it blocks. The id column in connection_type.csv is this
+      enum's name in lower case, so a designer adding a passage adds a member
+      here first.
+    -->
+    <enum name="ConnectionKind">
+        <var name="Door" value="1"/>
+        <var name="LockedDoor" value="2"/>
+        <var name="Stair" value="3"/>
+        <var name="Ladder" value="4"/>
+        <var name="Vent" value="5"/>
+        <var name="Window" value="6"/>
+        <var name="Hole" value="7"/>
+    </enum>
+
+    <!--
+      What a guard is for. Decides which GOAP goal set the planner starts from,
+      so an archetype whose goal set does not exist can never be generated.
+    -->
+    <!--
+      How a mission resolved. The five classes the stage-4e brief names, and the axis
+      every reward, heat award, evidence record and injury is priced against
+      (resolve_rule.csv).
+
+      CleanSuccess and Success are both "the objective was done", and they are separate
+      classes because the difference between "nobody noticed" and "somebody noticed and
+      nobody stopped us" is the difference between a mission that raises the agency and
+      one that raises the Heat.
+    -->
+    <enum name="ResolveClass">
+        <!-- Objective done, nobody identified the team. -->
+        <var name="CleanSuccess" value="1"/>
+        <!-- Objective done, but the site knows somebody was there. -->
+        <var name="Success" value="2"/>
+        <!-- Objective done and the site is hunting; the team got out hurt. -->
+        <var name="Compromised" value="3"/>
+        <!-- The player called it off; the objective is incomplete by choice. -->
+        <var name="Aborted" value="4"/>
+        <!-- The site burned the team. Objective state hardly matters. -->
+        <var name="Disaster" value="5"/>
+    </enum>
+
+    <!--
+      A support ability a Handler at a forward command post can grant.
+
+      An enum rather than a string because these are a closed set the simulation
+      switches on and each one is a real mechanic with its own rule path; a string
+      column would let a designer add a name that resolves to nothing.
+    -->
+    <enum name="SupportAbility">
+        <!-- Reveal where the guards were last actually seen. -->
+        <var name="PingLastKnown" value="1"/>
+        <!-- Open a locked door remotely, provided the post's terminal is hacked. -->
+        <var name="RemoteDoorUnlock" value="2"/>
+        <!-- Watch one chosen room for a while. -->
+        <var name="CameraFeed" value="3"/>
+        <!-- Bring the exfil vehicle forward to a chosen point. -->
+        <var name="RequestExtraction" value="4"/>
+        <!-- Drop smoke in a chosen room. -->
+        <var name="EmergencySmoke" value="5"/>
+    </enum>
+
+    <enum name="GuardRole">
+        <!-- Walks a fixed route. The baseline. -->
+        <var name="Patrol" value="1"/>
+        <!-- Stays at one post and watches a direction. -->
+        <var name="Sentry" value="2"/>
+        <!-- Moves toward whatever the alarm is about. -->
+        <var name="Responder" value="3"/>
+        <!-- Guards a specific thing: a vault, a terminal, a prisoner. -->
+        <var name="Specialist" value="4"/>
+    </enum>
 </module>

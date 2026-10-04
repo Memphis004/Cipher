@@ -1,0 +1,10 @@
+##var,id,name_key,radius_cm,intensity_level,can_be_destroyed,can_be_switched,noise_on_destroy,restores_after_steps
+##type,int,string,int,LightLevel,bool,bool,int,int
+,12251,light.ceiling_strip,900,Dim,1,1,18,600
+,12252,light.floodlight,1500,Lit,0,1,22,0
+,12253,light.emergency_lamp,700,Dim,1,0,25,1200
+,12254,light.desk_lamp,400,Dim,1,1,8,300
+,12255,light.pendant,800,Lit,0,1,12,0
+,12256,light.motion_sensor,1100,Dim,1,1,20,900
+,12257,light.searchlight,1800,Lit,0,1,30,0
+,12258,light.ir_watchlight,1200,Dark,1,0,10,1500

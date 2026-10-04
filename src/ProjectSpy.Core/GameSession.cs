@@ -1,4 +1,23 @@
+using ProjectSpy.Core.Tactical;
+
 namespace ProjectSpy.Core;
+
+/// <summary>
+/// Which clock the session is running on.
+/// </summary>
+/// <remarks>
+/// The two are never both live. A mission is either being played step by step or the
+/// base is being simulated hour by hour, and the base clock freezes for the duration
+/// of a mission (knowledge.md rule 13).
+/// </remarks>
+public enum SessionMode
+{
+    /// <summary>Base simulation: <see cref="AdvanceTick"/> moves time.</summary>
+    Strategic = 0,
+
+    /// <summary>Inside a mission: <see cref="AdvanceTacticalStep"/> moves time.</summary>
+    Tactical = 1,
+}
 
 /// <summary>
 /// The single entry point Presentation talks to. Owns the <see cref="WorldState"/>,
@@ -48,6 +67,154 @@ public sealed class GameSession : IEventSink
     /// </para>
     /// </remarks>
     private readonly List<ReplayEntry> _replayLog = new();
+
+    /// <summary>The tactical clock. Live only while <see cref="Mode"/> is Tactical.</summary>
+    public TacticalClock TacticalClock { get; } = new();
+
+    /// <summary>
+    /// Which of the two time scales the session is currently running on.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the mechanism behind knowledge.md rule 13: the base clock does not
+    /// advance while a tactical mission is running. Rather than trusting every caller
+    /// to remember that, <see cref="AdvanceStrategicTick"/> throws in Tactical mode, so
+    /// a system that tried to advance base time mid-mission fails loudly at the call
+    /// site instead of quietly double-spending the player's week.
+    /// </para>
+    /// </remarks>
+    public SessionMode Mode { get; private set; } = SessionMode.Strategic;
+
+    /// <summary>The tactical speed setting. Only read while in Tactical mode.</summary>
+    public TacticalTimeScale TacticalSpeed { get; set; } = TacticalTimeScale.Normal;
+
+    /// <summary>The strategic speed setting. Only read while in Strategic mode.</summary>
+    public StrategicTimeScale StrategicSpeed { get; set; } = StrategicTimeScale.Normal;
+
+    /// <summary>
+    /// Enters Tactical mode, starting a mission.
+    /// </summary>
+    /// <remarks>
+    /// The base clock is not touched here and does not move until
+    /// <see cref="LeaveTacticalMode"/> converts the elapsed steps
+    /// (knowledge.md rule 13).
+    /// </remarks>
+    public void EnterTacticalMode(TacticalState mission)
+    {
+        if (mission is null) throw new ArgumentNullException(nameof(mission));
+        if (Mode == SessionMode.Tactical)
+            throw new InvalidOperationException("Already in tactical mode; close the mission first.");
+
+        if (mission.Layout is null)
+        {
+            throw new InvalidOperationException(
+                "A tactical state with no site layout cannot be played; there is no building to " +
+                "be in. Build one with TacticalMission.Create.");
+        }
+
+        World.ActiveMission = mission;
+        TacticalRunner = new TacticalMissionRunner(mission, World.RngStreams);
+        TacticalClock.SetTo(new Step(mission.Step));
+        Mode = SessionMode.Tactical;
+    }
+
+    /// <summary>
+    /// The pipeline runner for the mission being played, or null outside Tactical mode.
+    /// </summary>
+    /// <remarks>
+    /// Public so that a caller can read what the last step's phases did without
+    /// reaching into the mission and inferring it — which is what makes the pipeline
+    /// observable, and therefore what makes an order bug reportable.
+    /// </remarks>
+    public TacticalMissionRunner? TacticalRunner { get; private set; }
+
+    /// <summary>
+    /// Leaves Tactical mode, converting the elapsed steps to strategic ticks exactly
+    /// once.
+    /// </summary>
+    /// <returns>The number of strategic ticks added to the base clock.</returns>
+    /// <remarks>
+    /// The conversion is idempotent by construction: a mission already marked
+    /// converted returns zero instead of paying the cost again. Without that, closing
+    /// a mission twice — a quit followed by a load, say — would silently eat an hour
+    /// of the player's base time.
+    /// </remarks>
+    public long LeaveTacticalMode()
+    {
+        if (Mode != SessionMode.Tactical)
+            throw new InvalidOperationException("Not in tactical mode; there is no mission to close.");
+
+        TacticalState mission = World.ActiveMission
+            ?? throw new InvalidOperationException("Tactical mode without an active mission.");
+
+        if (mission.TimeConverted)
+        {
+            Mode = SessionMode.Strategic;
+            World.ActiveMission = null;
+            TacticalRunner = null;
+            return 0;
+        }
+
+        long ticks = MissionTimeConverter.StepsToStrategicTicks(mission.Step);
+        mission.TimeConverted = true;
+
+        Mode = SessionMode.Strategic;
+        World.ActiveMission = null;
+        TacticalRunner = null;
+
+        if (ticks > 0)
+            AdvanceStrategicTicks((int)Math.Min(ticks, int.MaxValue));
+
+        return ticks;
+    }
+
+    /// <summary>
+    /// Advances the tactical simulation by one step.
+    /// </summary>
+    /// <remarks>
+    /// Runs the ten phases of the tactical pipeline in the order knowledge.md rule 6
+    /// fixes, and only then advances the clock. The clock is last because a step is a
+    /// thing that happened <em>at</em> a time: advancing first would mean the step's
+    /// events carry the timestamp of the moment <em>after</em> the step, and every
+    /// ordering a replay reconstructs from those timestamps would be off by one step.
+    /// </remarks>
+    public void AdvanceTacticalStep()
+    {
+        if (Mode != SessionMode.Tactical)
+            throw new InvalidOperationException("Tactical steps only advance inside a mission.");
+
+        TacticalState mission = World.ActiveMission
+            ?? throw new InvalidOperationException("Tactical mode without an active mission.");
+
+        if (mission.IsOver)
+            throw new InvalidOperationException(
+                $"Mission {mission.MissionId} has already ended ({mission.Outcome}); there is nothing left to step.");
+
+        // Held for the life of the mission rather than rebuilt per step. It owns the
+        // phase pipeline and the two named RNG streams, and rebuilding it sixty times a
+        // simulated minute to save one reference is the wrong trade against a mission
+        // running for an hour. EnterTacticalMode creates it and LeaveTacticalMode drops
+        // it, so it can never outlive the mission it belongs to.
+        if (TacticalRunner is null)
+            throw new InvalidOperationException(
+                "Tactical mode without a runner; EnterTacticalMode should have made one.");
+
+        TacticalRunner.Step();
+
+        TacticalClock.Advance();
+        mission.Step = TacticalClock.Current.Value;
+
+        FlushEvents();
+    }
+
+    /// <summary>Advances <paramref name="steps"/> tactical steps.</summary>
+    public void AdvanceTacticalSteps(long steps)
+    {
+        if (steps < 0) throw new ArgumentOutOfRangeException(nameof(steps), steps, "Cannot rewind time.");
+
+        for (long i = 0; i < steps; i++)
+            AdvanceTacticalStep();
+    }
 
     /// <summary>Creates a session over a fresh world.</summary>
     public GameSession(ulong seed, int baseLayerCount = 12, int baseSlotsPerLayer = 24)
@@ -182,9 +349,15 @@ public sealed class GameSession : IEventSink
     }
 
     /// <summary>
-    /// Advances one tick: raises tick/day/week notifications, then runs the tick
-    /// pipeline in its canonical order, then flushes events.
+    /// Advances one strategic tick: raises tick/day/week notifications, then runs the
+    /// tick pipeline in its canonical order, then flushes events.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The session is in <see cref="SessionMode.Tactical"/>. The base clock is frozen
+    /// during a mission (knowledge.md rule 13), and this throws rather than checking
+    /// because a caller that advances base time mid-mission is a bug in the caller —
+    /// silently ignoring the call would let it keep running and never find out.
+    /// </exception>
     /// <remarks>
     /// The week boundary deliberately does <em>not</em> publish a
     /// <see cref="WeekSettled"/> event here. Stage 1 did, with zero amounts, as a
@@ -194,6 +367,14 @@ public sealed class GameSession : IEventSink
     /// </remarks>
     public void AdvanceTick()
     {
+        if (Mode == SessionMode.Tactical)
+        {
+            throw new InvalidOperationException(
+                "The base clock does not advance during a tactical mission " +
+                "(knowledge.md rule 13). Call AdvanceTacticalStep instead, or leave " +
+                "tactical mode first.");
+        }
+
         Tick previous = World.Clock.Current;
 
         World.Clock.Advance();
@@ -214,10 +395,18 @@ public sealed class GameSession : IEventSink
         FlushEvents();
     }
 
-    /// <summary>Advances <paramref name="count"/> ticks, flushing once at the end.</summary>
+    /// <summary>Advances <paramref name="count"/> strategic ticks, flushing once at the end.</summary>
     public void AdvanceTicks(int count)
     {
         if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), count, "Cannot rewind time.");
+
+        if (Mode == SessionMode.Tactical)
+        {
+            throw new InvalidOperationException(
+                "The base clock does not advance during a tactical mission " +
+                "(knowledge.md rule 13). Call AdvanceTacticalSteps instead, or leave " +
+                "tactical mode first.");
+        }
 
         // Recorded as one entry rather than N, so a replay reproduces the same batching.
         // The batching is what decides whether a periodic rule (weekly settlement, pool
@@ -228,6 +417,22 @@ public sealed class GameSession : IEventSink
         for (int i = 0; i < count; i++)
             AdvanceTick();
     }
+
+    /// <summary>
+    /// The strategic-scale advance, named for what it advances.
+    /// </summary>
+    /// <remarks>
+    /// Same operation as <see cref="AdvanceTick"/>; the explicit name is what callers
+    /// should reach for now that a session can also run a tactical clock, because
+    /// <c>AdvanceTick</c> next to <c>AdvanceTacticalStep</c> reads as a pair of
+    /// symmetric methods rather than two different clocks.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException">The session is in Tactical mode.</exception>
+    public void AdvanceStrategicTick() => AdvanceTick();
+
+    /// <summary>Advances <paramref name="count"/> strategic ticks in one batch.</summary>
+    /// <exception cref="InvalidOperationException">The session is in Tactical mode.</exception>
+    public void AdvanceStrategicTicks(int count) => AdvanceTicks(count);
 
     /// <summary>Advances to the start of the next day.</summary>
     public void AdvanceToNextDay()

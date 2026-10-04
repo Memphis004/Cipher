@@ -1,0 +1,17 @@
+##var,id,name_key,tier,floor_count_min,floor_count_max,width_per_floor_min,width_per_floor_max,security_grade,guard_count_min,guard_count_max,civilian_count,objective_room_tags,allowed_room_ids,has_forward_post,lighting_profile_id
+##type,int,string,int,int,int,int,int,int,int,int,int,string,string,bool,int
+,11001,site.warehouse_district,1,1,2,30,40,20,3,6,5,office,"12002,12009,12010,12012",0,11101
+,11002,site.small_office,1,1,2,24,32,25,2,4,8,office,"12002,12008,12010,12017",0,11101
+,11003,site.private_house,1,1,2,20,28,15,1,3,2,office,"12002,12009,12011",0,11102
+,11004,site.corner_shop,1,1,1,20,26,10,1,2,3,office,"12002,12011",0,11102
+,11005,site.municipal_office,2,2,3,32,44,35,4,7,14,document,"12002,12008,12010,12015,12018",1,11103
+,11006,site.research_lab,2,2,3,34,46,40,3,6,9,lab,"12002,12007,12018",0,11103
+,11007,site.private_clinic,2,2,3,28,40,30,3,6,11,office,"12002,12007,12016,12018",0,11103
+,11008,site.logistics_hub,2,2,4,42,56,35,5,9,7,storage,"12009,12010,12012,12016,12018",1,11104
+,11009,site.data_centre,3,3,4,40,52,55,5,9,3,server,"12003,12007,12014,12016",1,11104
+,11010,site.security_hq,3,3,4,44,58,60,7,13,18,document,"12002,12004,12010,12015,12018",1,11105
+,11011,site.arms_depot,3,3,5,46,60,65,6,12,4,valuable,"12004,12005,12009,12012,12015",1,11105
+,11012,site.government_archive,3,4,5,48,62,70,6,11,12,archive,"12002,12006,12010,12018",1,11105
+,11013,site.black_site,4,4,6,50,66,85,8,16,2,document,"12004,12005,12013,12016",1,11106
+,11014,site.embassy_annexe,4,4,6,46,60,80,7,14,15,document,"12002,12004,12010,12015,12018",1,11106
+,11015,site.corporate_hq,4,5,6,54,70,90,8,18,22,office,"12002,12003,12008,12010,12014,12015",1,11106

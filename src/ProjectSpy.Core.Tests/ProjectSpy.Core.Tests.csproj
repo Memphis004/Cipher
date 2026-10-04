@@ -19,6 +19,13 @@
     <ProjectReference Include="..\ProjectSpy.Core\ProjectSpy.Core.csproj" />
     <!-- TableValidator loads the Luban-generated tables to check designer edits. -->
     <ProjectReference Include="..\ProjectSpy.Tables\ProjectSpy.Tables.csproj" />
+    <!--
+      The batch harness. Referenced rather than reimplemented so that a mission the
+      tests assert on is built by the same code that builds the mission the balance
+      report describes. A second, near-identical fixture builder in the test project
+      would drift, and every balance number would then be about a game nobody plays.
+    -->
+    <ProjectReference Include="..\ProjectSpy.Sim\ProjectSpy.Sim.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,13 @@
+##var,id,name_key,auto_behaviour_set,allowed_orders,passive_bonus,passive_bonus_value,requires_command_post
+##type,int,string,string,string,string,int,bool
+,12351,role.pointman,pointman,"MoveTo,HoldPosition,Follow,Stack,Regroup,Abort",infiltration_perception,10,0
+,12352,role.hacker,hacker,"MoveTo,HoldPosition,Follow,Stack,UseGadget,Regroup,Abort",tech_hack_speed,15,0
+,12353,role.overwatch,overwatch,"HoldPosition,OverwatchDirection,Follow,Regroup,Abort",nerve_aim_penalty,10,0
+,12354,role.mule,mule,"MoveTo,HoldPosition,Follow,Stack,CarryAlly,HideBody,Regroup,Abort",carry_capacity,15,0
+,12355,role.medic,medic,"MoveTo,HoldPosition,Follow,Stack,Regroup,Abort",heal_speed,20,0
+,12356,role.scout,scout,"MoveTo,HoldPosition,Follow,Stack,Regroup,Abort",infiltration_noise_penalty,10,0
+,12357,role.hacker_support,hacker,"MoveTo,HoldPosition,Follow,Stack,UseGadget,Regroup,Abort",tech_hack_speed,10,1
+,12358,role.handler,handler,"HoldPosition,RequestExtraction,UseGadget,Regroup,Abort",support_cooldown,25,1
+,12359,role.pointman_support,pointman,"MoveTo,HoldPosition,Follow,Stack,Regroup,Abort",infiltration_perception,6,1
+,12360,role.sniper,overwatch,"HoldPosition,OverwatchDirection,Regroup,Abort",combat_damage,10,0
+,12361,role.saboteur,pointman,"MoveTo,HoldPosition,Follow,Stack,UseGadget,Regroup,Abort",tech_device_speed,12,0

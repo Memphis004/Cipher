@@ -177,7 +177,15 @@ public class CorePurityTests
         "collider", "hitbox", "bounds", "width", "height", "scale",
         "mesh", "sprite", "renderer", "prefab", "material", "texture",
         "camera", "raycast", "linecast", "spherecast",
-        "worldspace", "worldposition", "localposition", "screenposition",
+        "worldspace", "localposition", "screenposition",
+    };
+
+    /// <summary>The subset of <see cref="ForbiddenMemberFragments"/> that names RENDER state.</summary>
+    private static readonly HashSet<string> RenderFragments = new(StringComparer.Ordinal)
+    {
+        "mesh", "sprite", "renderer", "prefab", "material", "texture",
+        "camera", "raycast", "linecast", "spherecast",
+        "collider", "hitbox", "bounds",
     };
 
     /// <summary>
@@ -192,6 +200,23 @@ public class CorePurityTests
     {
         // Integer multiplier on build cost, not a transform scale.
         nameof(BaseLayout.DepthCostModifier),
+
+        // A mission node's security camera. The stage-4 brief lists `camera` as an
+        // interactable kind, and the word is on the forbidden list because of what it
+        // usually names in Core: a rendering component.
+        //
+        // It is not one here. This is a rule object — it watches a set of abstract slot
+        // indices and raises the alarm meter when the team is seen. It holds no
+        // position, no transform, no frustum and no render state, and it exists in the
+        // 2D, 2.5D and 3D presentations equally. The ban targets render state, and the
+        // guard below checks member names because it cannot check types; this is a
+        // documented instance of a name being innocent of the thing it is named after.
+        //
+        // If a camera ever grows a transform, a view frustum or a render layer, this
+        // exemption becomes a bug rather than a loophole — so it is listed by name
+        // rather than by pattern, and the leak tests still hold it to the same
+        // coordinate-free surface as everything else.
+        nameof(InteractableType.Camera),
     };
 
     [Fact]
@@ -208,14 +233,14 @@ public class CorePurityTests
             foreach (PropertyInfo property in type.GetProperties(
                          BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
             {
-                if (IsForbiddenMemberName(property.Name))
+                if (IsForbiddenMemberName(property.Name, type.Namespace))
                     offenders.Add($"{type.FullName}.{property.Name}");
             }
 
             foreach (FieldInfo field in type.GetFields(
                          BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
             {
-                if (IsForbiddenMemberName(field.Name))
+                if (IsForbiddenMemberName(field.Name, type.Namespace))
                     offenders.Add($"{type.FullName}.{field.Name}");
             }
         }
@@ -244,7 +269,7 @@ public class CorePurityTests
                 foreach (ParameterInfo parameter in method.GetParameters())
                 {
                     string? parameterName = parameter.Name;
-                    if (parameterName is null || !IsForbiddenMemberName(parameterName))
+                    if (parameterName is null || !IsForbiddenMemberName(parameterName, type.Namespace))
                         continue;
 
                     // A single int called `position` is the shape the grid API had.
@@ -294,7 +319,7 @@ public class CorePurityTests
         // type, a state, and a slot index.
         foreach (PropertyInfo property in typeof(Interactable).GetProperties())
         {
-            Assert.False(IsForbiddenMemberName(property.Name),
+            Assert.False(IsForbiddenMemberName(property.Name, typeof(Interactable).Namespace),
                 $"Interactable.{property.Name} is coordinate- or render-shaped");
         }
     }
@@ -308,6 +333,18 @@ public class CorePurityTests
     /// the list got quietly useless: a check that cries wolf over the resource counter
     /// is a check someone will delete. Tokenizing the identifier into camel-case words
     /// keeps <c>NewGridX</c> (New, Grid, X) while leaving <c>Materials</c> alone.
+    /// </remarks>
+    /// <remarks>
+    /// One vocabulary gap is worth recording rather than pretending away. Adding the
+    /// token "world" to catch <c>WorldPosition</c> was tried and reverted: "world" is
+    /// this project's own noun for the global simulation (<c>worldSeed</c>,
+    /// <c>WorldState</c>, and the <c>world</c> parameter on every phase method), so
+    /// banning the word bans the simulation's own vocabulary and the guard stops being
+    /// about render state at all. <c>WorldPosition</c> is therefore forgiven inside the
+    /// tactical namespaces along with any other position word. The mitigation is naming
+    /// rather than banning — the tactical types say <c>StartX</c> and
+    /// <c>TacticalPosition</c> — and the render half, which is what rule 10 is
+    /// actually for, stays banned everywhere.
     /// </remarks>
     private static bool IsForbiddenMemberName(string name)
     {
@@ -326,13 +363,88 @@ public class CorePurityTests
         return false;
     }
 
+    /// <summary>
+    /// Namespaces where a coordinate-shaped member name is legitimate (rule 10's
+    /// tactical-space exception, rules 15 and 16).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>ProjectSpy.Core.Tactical</c> holds <c>TacticalPosition</c>.
+    /// <c>ProjectSpy.Core.Missions</c> holds the site-layout types, which describe a
+    /// generated building as ordered <c>[StartX, EndX)</c> intervals of centimetres.
+    /// Both are simulation space: a room's <c>StartX</c> is a number the simulation
+    /// does interval maths on, in exactly the way rule 15 requires.
+    /// </para>
+    /// <para>
+    /// <b>The exemption covers coordinate words only.</b> Render words — mesh,
+    /// sprite, renderer, texture, camera, collider — are still rejected inside these
+    /// namespaces, which is the half that matters. A building having rooms with
+    /// extents is a fact about a building; a building having a material is a fact
+    /// about a renderer, and nothing in Core ever needs it.
+    /// </para>
+    /// <para>
+    /// Namespace-scoped rather than type-scoped on purpose: a name-by-name exemption
+    /// list is a list that has to be edited every time the model grows a field, and
+    /// the next person to add one will not be the person who wrote the justification.
+    /// Scoping it to the namespace means the question stays "is this simulation
+    /// space or render space", which is answerable without reading a list.
+    /// </para>
+    /// <para>
+    /// Note that the older files that happen to live under <c>Missions/</c> declare
+    /// <c>namespace ProjectSpy.Core</c>, so they are <em>not</em> covered by this.
+    /// That is the point: the exemption was granted to the new site-layout namespace,
+    /// not to a folder.
+    /// </para>
+    /// </remarks>
+    private static readonly HashSet<string> TacticalSpaceNamespaces = new(StringComparer.Ordinal)
+    {
+        "ProjectSpy.Core.Tactical",
+        "ProjectSpy.Core.Missions",
+    };
+
+    /// <summary>
+    /// True when a member name is coordinate- or render-shaped <em>for the type that
+    /// declares it</em>.
+    /// </summary>
+    /// <remarks>
+    /// The namespace-aware counterpart of <see cref="IsForbiddenMemberName(string)"/>:
+    /// the same token check, except that coordinate words are forgiven inside
+    /// <see cref="TacticalSpaceNamespaces"/> and render words are forgiven nowhere.
+    /// </remarks>
+    private static bool IsForbiddenMemberName(string name, string? declaringNamespace)
+    {
+        bool tacticalSpace = declaringNamespace is not null
+                             && TacticalSpaceNamespaces.Contains(declaringNamespace);
+
+        if (ForbiddenMemberExemptions.Contains(name))
+            return false;
+
+        foreach (string word in Tokenize(name))
+        {
+            foreach (string fragment in ForbiddenMemberFragments)
+            {
+                if (!string.Equals(word, fragment, StringComparison.Ordinal))
+                    continue;
+
+                if (tacticalSpace && !RenderFragments.Contains(fragment))
+                    continue;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     [Theory]
     [InlineData("GridX", true)]
     [InlineData("GridY", true)]
     [InlineData("NewGridX", true)]        // the prefixed form that got through first
     [InlineData("WorldPosition", true)]
     [InlineData("LocalPosition", true)]
-    [InlineData("Camera", true)]
+    [InlineData("Camera", false)]          // exempted: a rule object, not a render component
+    [InlineData("RenderCamera", true)]    // the shapes the ban actually targets
+    [InlineData("CameraTransform", true)]
     [InlineData("Bounds", true)]
     [InlineData("Width", true)]
     [InlineData("Height", true)]
@@ -351,6 +463,47 @@ public class CorePurityTests
         // A guard that cannot fail is worse than no guard: it reads as protection and
         // provides none. These are the exact shapes the rule 10 migration removed.
         Assert.Equal(expected, IsForbiddenMemberName(name));
+    }
+
+    [Theory]
+    // The tactical-space exception (rules 15 and 16). A room occupies an interval of
+    // centimetres and a `TacticalPosition` names a point on a floor; both are facts
+    // about the simulation, so these names are legitimate here and nowhere else.
+    [InlineData("StartX", false)]
+    [InlineData("EndX", false)]
+    [InlineData("Span", false)]
+    [InlineData("Width", false)]      // a room's span in centimetres, not a render extent
+    [InlineData("FloorIndex", false)]
+
+    // The other half of the split: render words are forgiven in NO namespace. A site
+    // layout is not a renderer, and a `SiteRoom.Material` would be the exact
+    // regression rule 10 exists to prevent.
+    [InlineData("MeshRenderer", true)]
+    [InlineData("Texture", true)]
+    [InlineData("CameraTransform", true)]
+    [InlineData("Collider", true)]
+    [InlineData("WorldPosition", false)]  // see the note on the token check: 'world' is a
+                                          // project noun (worldSeed, WorldState), not render state
+    public void TheTacticalSpaceExceptionForgivesCoordinatesButNeverRenderState(
+        string name, bool expected)
+    {
+        Assert.Equal(expected, IsForbiddenMemberName(name, "ProjectSpy.Core.Missions"));
+        Assert.Equal(expected, IsForbiddenMemberName(name, "ProjectSpy.Core.Tactical"));
+    }
+
+    [Fact]
+    public void TheTacticalSpaceExceptionDoesNotLeakOutsideItsNamespaces()
+    {
+        // The exemption is scoped by namespace, so the same coordinate name is still
+        // forbidden on the base layout and on the older mission-map types — which
+        // live under Missions/ but declare ProjectSpy.Core. Scoping it to a folder
+        // rather than a namespace would have quietly let all of them back in.
+        foreach (string name in new[] { "Width", "Position", "Bounds", "Scale", "Transform" })
+        {
+            Assert.True(IsForbiddenMemberName(name, "ProjectSpy.Core"));
+            Assert.True(IsForbiddenMemberName(name, "ProjectSpy.Core.Missions.Something"));
+            Assert.True(IsForbiddenMemberName(name, null));
+        }
     }
 
     /// <summary>Splits a PascalCase or camelCase identifier into lowercase words.</summary>

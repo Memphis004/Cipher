@@ -47,6 +47,19 @@ public enum InteractableType
 
     /// <summary>The way out. A room has at most one.</summary>
     Exit = 5,
+
+    /// <summary>
+    /// Watches a set of slots and raises the alarm when it sees the team.
+    /// </summary>
+    /// <remarks>
+    /// Appended after <see cref="Exit"/> rather than inserted, because the numeric
+    /// values are written into save files and replay logs. Renumbering one would
+    /// silently reinterpret every save ever made.
+    /// </remarks>
+    Camera = 6,
+
+    /// <summary>What the mission is for. A room has at most one.</summary>
+    Objective = 7,
 }
 
 /// <summary>
@@ -188,6 +201,15 @@ public sealed class Interactable
         InteractableType.Exit => state is InteractableState.Idle
             or InteractableState.Open
             or InteractableState.Destroyed,
+        // A camera is never opened and never searched. It is disabled or destroyed,
+        // and Idle means it is still watching.
+        InteractableType.Camera => state is InteractableState.Idle
+            or InteractableState.Active
+            or InteractableState.Disabled
+            or InteractableState.Destroyed,
+        // The objective has exactly the same lifecycle as a container that cannot be
+        // re-searched: it is either still there or it is done with.
+        InteractableType.Objective => state is not (InteractableState.Locked or InteractableState.Triggered),
         _ => false,
     };
 }
@@ -383,11 +405,20 @@ public sealed class RoomContents
         }
 
         // More than one exit would leave "where does the team leave from"
-        // ambiguous, and every consumer would have to pick one arbitrarily.
+        // ambiguous, and every consumer would have to pick one arbitrarily. Same
+        // reasoning for the objective: two of them is not a harder room, it is a
+        // question with no defined answer.
         int exits = OfType(InteractableType.Exit).Count;
         if (exits > 1)
         {
             problem = $"MultipleExits:{exits}";
+            return false;
+        }
+
+        int objectives = OfType(InteractableType.Objective).Count;
+        if (objectives > 1)
+        {
+            problem = $"MultipleObjectives:{objectives}";
             return false;
         }
 

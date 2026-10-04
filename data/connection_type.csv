@@ -1,0 +1,9 @@
+##var,id,name_key,kind,traverse_steps,noise_on_use,requires_skill,skill_dc,blocks_vision,can_be_locked,can_be_barricaded,usable_by_npc
+##type,int,string,ConnectionKind,int,int,SkillKind,int,bool,bool,bool,bool
+,12051,connection.door,Door,10,6,None,0,1,1,1,1
+,12052,connection.locked_door,LockedDoor,12,9,Tech,45,1,1,1,1
+,12053,connection.stair,Stair,25,14,None,0,0,0,1,1
+,12054,connection.ladder,Ladder,30,11,None,0,0,0,1,1
+,12055,connection.vent,Vent,40,4,None,0,0,0,0,0
+,12056,connection.window,Window,15,7,None,0,0,0,1,0
+,12057,connection.hole,Hole,20,5,None,0,0,0,0,1

@@ -69,6 +69,18 @@ public enum GameEventKind
     AgentCleared = 40,
     MissionCompromised = 41,
     ContractOfferRefreshed = 42,
+
+    // Stage 4b. Values are appended; existing values are never renumbered because the
+    // integer is written into save and replay files.
+    SleeperStarted = 43,
+    SleeperIntelGained = 44,
+    SleeperEmbedded = 45,
+    SleeperDiscovered = 46,
+    SleeperPoisoned = 47,
+    SleeperRecalled = 48,
+    IntelSnapshotRefreshed = 49,
+    IntelContradicted = 50,
+    AgentLost = 51,
 }
 
 // ---- time ------------------------------------------------------------------
@@ -387,4 +399,128 @@ public sealed record MissionCompromised(Tick Tick, int MissionId, int Difficulty
 public sealed record ContractOfferRefreshed(Tick Tick, int OfferCount) : GameEvent(Tick)
 {
     public override GameEventKind Kind => GameEventKind.ContractOfferRefreshed;
+}
+
+// ---- stage 4b: pre-mission intel -------------------------------------------
+
+/// <summary>An agent was inserted into a site to spy on it.</summary>
+/// <param name="SiteId">The site being spied on.</param>
+public sealed record SleeperStarted(Tick Tick, AgentId AgentId, int SiteId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.SleeperStarted;
+}
+
+/// <summary>A sleeper operation accrued intel.</summary>
+/// <param name="IntelPercent">Intel after this tick.</param>
+/// <param name="Band">The band that percentage now unlocks.</param>
+public sealed record SleeperIntelGained(
+    Tick Tick,
+    AgentId AgentId,
+    int SiteId,
+    int IntelPercent,
+    IntelBand Band) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.SleeperIntelGained;
+}
+
+/// <summary>A sleeper finished inserting and is now embedded.</summary>
+public sealed record SleeperEmbedded(Tick Tick, AgentId AgentId, int SiteId, int IntelPercent) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.SleeperEmbedded;
+}
+
+/// <summary>
+/// The site found a sleeper. Heat has risen and the operation is over.
+/// </summary>
+/// <param name="FromStatus">The status the operation held when it was found.</param>
+/// <param name="ToStatus">
+/// Where the operation ended up: burned, or poisoned and still reporting.
+/// </param>
+/// <param name="HeatAdded">Heat added to the agency.</param>
+/// <remarks>
+/// Carries both statuses so a replay can see that discovery happened and how it
+/// resolved without having to infer one from the other. It does not say whether the
+/// intel was poisoned — <see cref="SleeperPoisoned"/> is a separate event precisely so
+/// that a UI subscribing to the log for the debrief can find it, while the base screen
+/// does not stumble across it while rendering discovery.
+/// </remarks>
+public sealed record SleeperDiscovered(
+    Tick Tick,
+    AgentId AgentId,
+    int SiteId,
+    SleeperStatus FromStatus,
+    SleeperStatus ToStatus,
+    int HeatAdded) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.SleeperDiscovered;
+}
+
+/// <summary>
+/// A discovered operation is now reporting deliberately false information.
+/// </summary>
+/// <remarks>
+/// Published for the debrief and for tests, never for the base screen. knowledge.md rule
+/// 17 is explicit that the player is not told: an announced poison tells the player to
+/// trust nothing from this source, which is the opposite of the tension the system is
+/// for.
+/// </remarks>
+public sealed record SleeperPoisoned(Tick Tick, AgentId AgentId, int SiteId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.SleeperPoisoned;
+}
+
+/// <summary>The player pulled a sleeper out, keeping the intel gathered so far.</summary>
+public sealed record SleeperRecalled(Tick Tick, AgentId AgentId, int SiteId, int IntelPercentKept)
+    : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.SleeperRecalled;
+}
+
+/// <summary>A new intel report for a site is available.</summary>
+/// <param name="IntelPercent">Intel the report was filtered at.</param>
+/// <param name="Band">The band that unlocks.</param>
+public sealed record IntelSnapshotRefreshed(
+    Tick Tick,
+    int SiteId,
+    int IntelPercent,
+    IntelBand Band) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.IntelSnapshotRefreshed;
+}
+
+/// <summary>
+/// What the team saw did not match what the sleeper reported.
+/// </summary>
+/// <remarks>
+/// <para>
+/// A gameplay moment, not an error, and this is the event that says so. The team walks
+/// to the door the report called open and finds it locked; that is the sleeper system
+/// paying out. Without this event the alternative would be for the tactical layer to
+/// quietly reconcile the report with reality, and then the report could never be wrong
+/// enough to matter.
+/// </para>
+/// <para>
+/// Carries the subject as an <see cref="IntelFactKind"/> and an id rather than the two
+/// disagreeing values, because the UI draws the contradiction against the real
+/// observation it already has; shipping both here would mean Core deciding which one the
+/// player is looking at.
+/// </para>
+/// </remarks>
+/// <param name="FactKind">Whether a room or a connection was contradicted.</param>
+/// <param name="FactId">The room or connection id.</param>
+/// <param name="ClaimedConfidence">What the report had said about it.</param>
+public sealed record IntelContradicted(
+    Tick Tick,
+    int SiteId,
+    IntelFactKind FactKind,
+    int FactId,
+    IntelConfidence ClaimedConfidence) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.IntelContradicted;
+}
+
+/// <summary>A prisoner died before they could be recovered.</summary>
+public sealed record AgentLost(Tick Tick, AgentId AgentId, int SiteId) : GameEvent(Tick)
+{
+    public override GameEventKind Kind => GameEventKind.AgentLost;
 }

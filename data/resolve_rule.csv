@@ -1,0 +1,7 @@
+##var,id,resolve_class,name_key,funds_percent,intel_percent,heat_percent,evidence_percent,injury_percent,mental_percent,loot_percent
+##type,int,ResolveClass,string,int,int,int,int,int,int,int
+,12901,CleanSuccess,resolve.clean_success,120,150,25,0,0,0,100
+,12902,Success,resolve.success,100,100,100,100,50,50,100
+,12903,Compromised,resolve.compromised,50,50,200,150,150,150,50
+,12904,Aborted,resolve.aborted,0,0,150,100,100,100,50
+,12905,Disaster,resolve.disaster,0,0,400,300,300,300,0

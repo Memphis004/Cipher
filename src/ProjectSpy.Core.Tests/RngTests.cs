@@ -196,6 +196,112 @@ public class RngTests
     }
 
     [Fact]
+    public void EveryStreamIsDistinctFromEveryOther()
+    {
+        // The pairwise check above covers three streams by hand. With nine of them the
+        // interesting failure is two streams nobody compared — so compare all of them.
+        var streams = new RngStreams(90210);
+        var sequences = new Dictionary<RngStreams.StreamKind, int[]>();
+
+        foreach (RngStreams.StreamKind kind in Enum.GetValues<RngStreams.StreamKind>())
+            sequences[kind] = DrawMany(streams[kind], 64);
+
+        var kinds = new List<RngStreams.StreamKind>(sequences.Keys);
+        for (int i = 0; i < kinds.Count; i++)
+        {
+            for (int j = i + 1; j < kinds.Count; j++)
+            {
+                Assert.NotEqual(
+                    sequences[kinds[i]],
+                    sequences[kinds[j]]);
+            }
+        }
+    }
+
+    [Fact]
+    public void AddingARollToAnyStreamDoesNotShiftAnyOther()
+    {
+        // The general form of the independence guarantee, across all nine streams
+        // rather than the one hand-written pair. Burn randomness through one stream and
+        // every other stream must produce byte-identical output afterwards — this is
+        // what lets a designer add a roll in, say, the GOAP planner without
+        // invalidating every recorded replay.
+        foreach (RngStreams.StreamKind disturbed in Enum.GetValues<RngStreams.StreamKind>())
+        {
+            var control = new RngStreams(31337);
+            var baseline = new Dictionary<RngStreams.StreamKind, int[]>();
+            foreach (RngStreams.StreamKind kind in Enum.GetValues<RngStreams.StreamKind>())
+                baseline[kind] = DrawMany(control[kind], 40);
+
+            var trial = new RngStreams(31337);
+            for (int i = 0; i < 50_000; i++)
+                trial[disturbed].NextRoll100();
+
+            foreach (RngStreams.StreamKind kind in Enum.GetValues<RngStreams.StreamKind>())
+            {
+                // The disturbed stream itself is supposed to have moved; every other
+                // one must not have.
+                if (kind == disturbed)
+                    continue;
+
+                Assert.Equal(
+                    baseline[kind],
+                    DrawMany(trial[kind], 40));
+            }
+        }
+    }
+
+    [Fact]
+    public void TheTacticalStreamsExistAndAreIndependent()
+    {
+        // Named explicitly because these four arrived with the tactical layer and a
+        // future refactor that folds Tactical back into Mission would pass every other
+        // test here while quietly breaking mid-mission saves.
+        var streams = new RngStreams(1);
+
+        Assert.NotNull(streams[RngStreams.StreamKind.Tactical]);
+        Assert.NotNull(streams[RngStreams.StreamKind.Goap]);
+        Assert.NotNull(streams[RngStreams.StreamKind.Sleeper]);
+        Assert.NotNull(streams[RngStreams.StreamKind.Loot]);
+
+        int[] tactical = DrawMany(streams[RngStreams.StreamKind.Tactical], 50);
+        int[] goap = DrawMany(streams[RngStreams.StreamKind.Goap], 50);
+        int[] sleeper = DrawMany(streams[RngStreams.StreamKind.Sleeper], 50);
+        int[] loot = DrawMany(streams[RngStreams.StreamKind.Loot], 50);
+        int[] mission = DrawMany(streams[RngStreams.StreamKind.Mission], 50);
+
+        Assert.NotEqual(tactical, mission);
+        Assert.NotEqual(tactical, goap);
+        Assert.NotEqual(goap, sleeper);
+        Assert.NotEqual(sleeper, loot);
+    }
+
+    [Fact]
+    public void StreamCountMatchesTheEnum()
+    {
+        // If these ever disagree, LoadState starts rejecting its own saves and the
+        // failure surfaces as "corrupt save" rather than as a build error.
+        Assert.Equal(RngStreams.StreamCount, Enum.GetValues<RngStreams.StreamKind>().Length);
+    }
+
+    [Fact]
+    public void ExistingStreamOrdinalsDidNotMoveWhenNewStreamsWereAdded()
+    {
+        // Saved stream state is positional. Appending Tactical/Goap/Sleeper/Loot is
+        // only safe because World..Trait kept the values they had; a save written
+        // before this change still restores into the right generators.
+        Assert.Equal(0, (int)RngStreams.StreamKind.World);
+        Assert.Equal(1, (int)RngStreams.StreamKind.Mission);
+        Assert.Equal(2, (int)RngStreams.StreamKind.Event);
+        Assert.Equal(3, (int)RngStreams.StreamKind.Recruit);
+        Assert.Equal(4, (int)RngStreams.StreamKind.Trait);
+        Assert.Equal(5, (int)RngStreams.StreamKind.Tactical);
+        Assert.Equal(6, (int)RngStreams.StreamKind.Goap);
+        Assert.Equal(7, (int)RngStreams.StreamKind.Sleeper);
+        Assert.Equal(8, (int)RngStreams.StreamKind.Loot);
+    }
+
+    [Fact]
     public void Streams_SameRootSeed_AreReproducible()
     {
         var first = new RngStreams(777);
@@ -237,9 +343,18 @@ public class RngTests
         RngStreams restored = RngStreams.FromState(state);
 
         Assert.Equal(state.RootSeed, restored.RootSeed);
+        Assert.Equal(RngStreams.StreamCount, state.Streams.Length);
         Assert.Equal(
             DrawMany(rng[RngStreams.StreamKind.Mission], 100),
             DrawMany(restored[RngStreams.StreamKind.Mission], 100));
+
+        // Every stream, not just the one the test happened to exercise.
+        foreach (RngStreams.StreamKind kind in Enum.GetValues<RngStreams.StreamKind>())
+        {
+            Assert.Equal(
+                DrawMany(rng[kind], 40),
+                DrawMany(restored[kind], 40));
+        }
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using ProjectSpy.Core;
 using ProjectSpy.Core.Tests.TableData;
 using ProjectSpy.Tables;
 using Xunit;
@@ -50,6 +51,8 @@ public class TableValidatorTests
         Assert.NotEmpty(t.TbContractOffer.DataList);
         Assert.NotEmpty(t.TbFogRule.DataList);
         Assert.NotEmpty(t.TbNodeInteriorRule.DataList);
+        Assert.NotEmpty(t.TbInteractableType.DataList);
+        Assert.NotEmpty(t.TbNodeInteriorTemplate.DataList);
     }
 
     [Fact]
@@ -165,12 +168,45 @@ public class TableValidatorTests
                 .Concat(Validator.Tables.TbLoanTier.DataList.Select(x => x.NameKey))
                 .Concat(Validator.Tables.TbMoraleBand.DataList.Select(x => x.NameKey))
                 .Concat(Validator.Tables.TbLoyaltyDrift.DataList.Select(x => x.SourceKey))
-                .Concat(Validator.Tables.TbLoyaltyThreshold.DataList.Select(x => x.Escalation)),
+                .Concat(Validator.Tables.TbLoyaltyThreshold.DataList.Select(x => x.Escalation))
+                // Stage 4 interactable kinds. These keys are derived by Core from the
+                // enum rather than stored in a table column, so they have to be listed
+                // here explicitly — which is the point: it keeps the equality assertion
+                // honest in both directions, since a key added to the catalog without a
+                // matching enum member now fails this test too.
+                .Concat(Enum.GetValues<InteractableType>().Select(SimulationRules.NameKeyFor))
+                // Tactical tables added for the continuous-building model.
+                .Concat(Validator.Tables.TbSiteTemplate.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbRoomTemplate.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbLightingProfile.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbLightSource.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbConnectionType.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbNoiseProfile.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbGuardArchetype.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbGoapGoal.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbGoapAction.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbAgentRole.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbTacticalAction.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbThrowable.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbMeleeWeapon.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbCaptureSite.DataList.Select(x => x.NameKey))
+                // Stage 4e: the six objective names, the five support abilities and the
+                // five resolve classes. These are what the dispatch screen, the post
+                // panel and the debrief lead line read, so a missing one is an empty
+                // label in the game's most-read screen rather than an unused string.
+                .Concat(Validator.Tables.TbObjectiveRule.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbCommandPostAbility.DataList.Select(x => x.NameKey))
+                .Concat(Validator.Tables.TbResolveRule.DataList.Select(x => x.NameKey)),
             StringComparer.Ordinal).Count;
 
         Assert.Equal(referenced, validator.Thai.Count);
         Assert.Equal(referenced, validator.English.Count);
-        Assert.True(referenced >= 280, $"Expected a substantial content set, found {referenced} keys.");
+
+        // A floor, not an exact count: it exists to catch a catalog that collapsed to
+        // almost nothing while still matching the tables. Raised as content was added
+        // rather than left stale, because a floor nobody updates is a floor that stops
+        // meaning anything.
+        Assert.True(referenced >= 495, $"Expected a substantial content set, found {referenced} keys.");
     }
 
     [Fact]

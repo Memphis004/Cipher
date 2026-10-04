@@ -1,0 +1,8 @@
+##var,id,objective_type,name_key,work_steps,exfil_steps,required_roles,alarm_tolerance_band,observe_rooms_required,blast_interval_steps,prisoner_speed_percent,prisoner_noise_percent,target_flee_percent,work_action
+##type,int,ObjectiveType,string,int,int,string,int,int,int,int,int,int,string
+,12801,StealData,objective.steal_data,300,200,hacker,2,0,0,0,0,0,action.interact_hack_terminal
+,12802,Sabotage,objective.sabotage,200,0,saboteur,3,0,600,0,0,0,action.stealth_plant_device
+,12803,Assassinate,objective.assassinate,150,0,overwatch,3,0,0,0,0,60,action.combat_takedown
+,12804,Rescue,objective.rescue,150,0,medic,2,0,0,50,150,0,action.support_carry_ally
+,12805,PlantBug,objective.plant_bug,200,0,saboteur,1,0,0,0,0,0,action.stealth_plant_device
+,12806,Recon,objective.recon,50,0,scout,2,4,0,0,0,0,action.support_observe

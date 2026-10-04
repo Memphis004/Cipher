@@ -1,0 +1,10 @@
+##var,id,kind,skill_checked,difficulty_class,tick_cost,noise,loot_table_id,allowed_room_tags,weight
+##type,int,InteractableKind,SkillKind,DifficultyClass,int,int,int,string,int
+,10091,Container,Infiltration,Trivial,1,0,7301,"container,server,storage,office,valuable,lab,archive,document,social,transit,admin,defense,secure,guard",100
+,10092,Door,Combat,Easy,1,5,0,"security,transit,defense,server,office,lab,storage",80
+,10093,Terminal,Tech,Standard,2,10,0,"terminal,server,lab,tech,intel,office",70
+,10094,Guard,Nerve,Standard,1,25,0,"security,guard,defense,transit,vault,intel,lab,archive,valuable,container",60
+,10095,Trap,Nerve,Easy,1,40,0,"security,defense,storage,lab,vault",30
+,10096,Camera,Infiltration,Easy,1,15,0,"security,guard,transit,office,defense",50
+,10097,Objective,Infiltration,Standard,3,20,0,"objective,document,valuable,intel,tech,server",25
+,10098,Exit,Nerve,Trivial,1,0,0,"transit,security,office,server,storage,lab,social",100

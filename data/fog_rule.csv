@@ -7,3 +7,11 @@
 ,10155,fog_gadget_scout_radius_bonus,2
 ,10156,fog_terminal_scout_radius_bonus,2
 ,10157,fog_silhouette_radius_percent,100
+,10158,fog_silhouette_divisor,25
+,10159,fog_scouted_divisor,40
+,10160,fog_team_avg_weight_pct,50
+,10161,fog_min_silhouette_radius,1
+,10162,fog_guard_band_few_max,1
+,10163,fog_guard_band_many_min,2
+,10164,fog_gadget_reveal_radius_bonus,1
+,10165,fog_terminal_reveal_radius_bonus,1

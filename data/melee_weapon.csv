@@ -1,0 +1,11 @@
+##var,id,name_key,range_cm,arc_degrees,damage,noise_profile_id,is_lethal,uses,heat_cost,evidence_level,gadget_id
+##type,int,string,int,int,int,int,bool,int,int,int,int
+,12501,melee.bare_hands,60,90,12,12313,0,0,0,0,0
+,12502,melee.truncheon,70,120,22,12313,0,0,8,25,0
+,12503,melee.knife,65,90,30,12314,1,0,28,80,0
+,12504,melee.silenced_pistol,900,15,35,12315,1,0,30,70,0
+,12505,melee.unarmed_wire,55,60,18,12314,0,0,6,20,0
+,12506,melee.fireaxe,80,100,45,12318,1,0,38,90,0
+,12507,melee.taser,70,60,20,12313,0,4,12,30,0
+,12508,melee.crowbar,75,110,28,12313,1,0,20,50,0
+,12509,melee.unarmed_shove,60,120,0,12314,0,0,2,5,0

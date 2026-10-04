@@ -1,6 +1,9 @@
 using System.Globalization;
 using System.Text;
 
+using ProjectSpy.Core.Squad;
+using ProjectSpy.Core.Tactical;
+
 namespace ProjectSpy.Core;
 
 /// <summary>
@@ -61,6 +64,7 @@ public static class WorldStateSerializer
         AppendAgents(sb, world, world.Recruits, "recruits");
         AppendCounterIntel(sb, world);
         AppendMissions(sb, world);
+        AppendTactical(sb, world);
         AppendFlags(sb, world);
         AppendCounters(sb, world);
         AppendRng(sb, world);
@@ -232,6 +236,227 @@ public static class WorldStateSerializer
             Append(sb, "contract.type", contract.TypeId);
             Append(sb, "contract.accepted", contract.Accepted ? 1 : 0);
             Append(sb, "contract.dispatched", contract.Dispatched ? 1 : 0);
+        }
+    }
+
+    /// <summary>
+    /// Writes the stage-4e squad state: who was dispatched, in what role, what they are
+    /// carrying, who is being driven, what is queued, what the post can do, and how the
+    /// objective is going.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is the save contract the "orders survive a save mid-mission" test rests
+    /// on.</b> Queued orders in particular are the part that is easy to leave out and
+    /// impossible to notice: a save that drops the queue loads a mission where a Medic
+    /// the player told to go and help somebody quietly does nothing, and nothing in the
+    /// loaded file says why.
+    /// </para>
+    /// <para>
+    /// Everything here is a value — an id, a count, an enum, an integer. Nothing writes a
+    /// role row or a gadget row out, because those are table data that the loaded build
+    /// resolves by id; a save that embedded them would be a save that could not survive a
+    /// balance change.
+    /// </para>
+    /// </remarks>
+    private static void AppendSquad(StringBuilder sb, TacticalState mission)
+    {
+        Append(sb, "squad.hasComposition", mission.Composition is not null ? 1 : 0);
+        Append(sb, "squad.abortCalled", mission.AbortCalled ? 1 : 0);
+        Append(sb, "squad.lastAbortStep", mission.LastAbortStep);
+        Append(sb, "squad.recordRolls", mission.RecordRolls ? 1 : 0);
+        Append(sb, "squad.lastStep", mission.Control.LastStep);
+        Append(sb, "squad.allHeld", mission.Control.AllHeld ? 1 : 0);
+        Append(sb, "squad.controlled", mission.Control.Controlled?.Value ?? -1);
+
+        ObjectiveOutcome outcome = mission.ObjectiveOutcome;
+        Append(sb, "objective.type", (int)outcome.Type);
+        Append(sb, "objective.nameKey", outcome.NameKey);
+        Append(sb, "objective.workSteps", outcome.WorkSteps);
+        Append(sb, "objective.exfilSteps", outcome.ExfilSteps);
+        Append(sb, "objective.roomsObserved", outcome.RoomsObserved);
+        Append(sb, "objective.blastSteps", outcome.BlastStepsRemaining);
+        Append(sb, "objective.prisoner", outcome.PrisonerId.Value);
+        Append(sb, "objective.prisonerFreed", outcome.PrisonerFreed ? 1 : 0);
+        Append(sb, "objective.target", outcome.TargetId.Value);
+        Append(sb, "objective.targetFled", outcome.TargetFled ? 1 : 0);
+        Append(sb, "objective.planted", outcome.PlantSucceeded ? 1 : 0);
+        Append(sb, "objective.workInteractable", outcome.WorkInteractableId);
+        Append(sb, "objective.complete", outcome.IsComplete ? 1 : 0);
+        Append(sb, "objective.failed", outcome.IsFailed ? 1 : 0);
+        Append(sb, "objective.failure", (int)outcome.Failure);
+        Append(sb, "objective.decidedBand", (int)outcome.DecidedAtBand);
+        Append(sb, "objective.decidedStep", outcome.DecidedOnStep);
+
+        CommandPostState post = mission.CommandPost;
+        Append(sb, "post.handler", post.HandlerId?.Value ?? -1);
+        Append(sb, "post.compromised", post.IsCompromised ? 1 : 0);
+        Append(sb, "post.compromisedStep", post.CompromisedOnStep);
+        Append(sb, "post.handlerStepsLeft", post.StepsUntilHandlerTaken);
+        Append(sb, "post.feedRoom", post.FeedRoomId ?? -1);
+        Append(sb, "post.feedSteps", post.FeedStepsRemaining);
+        Append(sb, "post.feedDuration", post.FeedDurationSteps);
+        Append(sb, "post.lastPingContacts", post.LastPingContacts);
+        Append(sb, "post.lastPingStep", post.LastPingStep);
+
+        foreach (int door in post.HackedDoors.OrderBy(d => d))
+            Append(sb, "post.hackedDoor", door);
+
+        foreach (int room in post.CalledExtractionRoomIds.OrderBy(r => r))
+            Append(sb, "post.calledExtraction", room);
+
+        foreach (KeyValuePair<ProjectSpy.Tables.SupportAbility, int> cooldown
+                 in post.Cooldowns.OrderBy(c => (int)c.Key))
+        {
+            Append(sb, "post.cooldown.ability", (int)cooldown.Key);
+            Append(sb, "post.cooldown.steps", cooldown.Value);
+        }
+
+        if (mission.Composition is { } composition)
+        {
+            Append(sb, "composition.objectiveType", (int)composition.ObjectiveType);
+            Append(sb, "composition.count", composition.Members.Count);
+
+            foreach (SquadMember member in composition.Members)
+            {
+                Append(sb, "member.agent", member.AgentId.Value);
+                Append(sb, "member.role", member.RoleId);
+
+                foreach ((int gadgetId, int uses) in member.Gadgets.Entries)
+                {
+                    Append(sb, "member.gadget", gadgetId);
+                    Append(sb, "member.gadgetUses", uses);
+                }
+            }
+
+            Append(sb, "composition.handler", composition.CommandPostHandler?.Value ?? -1);
+        }
+
+        foreach (SquadMemberOrders orders in mission.Control.Members)
+        {
+            Append(sb, "orders.agent", orders.AgentId.Value);
+            Append(sb, "orders.held", orders.Held ? 1 : 0);
+            Append(sb, "orders.lastOrderStep", orders.LastOrderStep);
+            Append(sb, "orders.count", orders.Queue.Count);
+
+            foreach (SquadStandingOrder order in orders.Queue)
+            {
+                Append(sb, "order.kind", (int)order.Kind);
+                Append(sb, "order.floor", order.Target.FloorIndex);
+                Append(sb, "order.x", order.Target.X.Raw);
+                Append(sb, "order.connection", order.ConnectionId.Value);
+                Append(sb, "order.interactable", order.InteractableId);
+                Append(sb, "order.targetActor", order.TargetActorId.Value);
+                Append(sb, "order.item", order.ItemId);
+                Append(sb, "order.light", order.LightId);
+                Append(sb, "order.facing", (int)order.Facing);
+                Append(sb, "order.issuedStep", order.IssuedOnStep);
+            }
+        }
+    }
+
+    private static void AppendTactical(StringBuilder sb, WorldState world)
+    {
+        sb.Append("tactical\n");
+
+        // Explicit rather than conditional on a null ActiveMission: a world with no
+        // mission and a dump that simply omits the section look identical, and the
+        // omission would be invisible in a diff of a failing determinism test.
+        Append(sb, "tactical.active", world.ActiveMission is not null ? 1 : 0);
+
+        if (world.ActiveMission is not null)
+        {
+            Append(sb, "tactical.mission", world.ActiveMission.MissionId);
+            Append(sb, "tactical.site", world.ActiveMission.SiteId);
+            Append(sb, "tactical.startedOn", world.ActiveMission.StartedOnTick.Value);
+            Append(sb, "tactical.step", world.ActiveMission.Step);
+            Append(sb, "tactical.timeConverted", world.ActiveMission.TimeConverted ? 1 : 0);
+
+            AppendSquad(sb, world.ActiveMission);
+        }
+
+        foreach (SleeperOperation sleeper in world.SleeperOperations.OrderBy(s => s.AgentId.Value))
+        {
+            Append(sb, "sleeper.agent", sleeper.AgentId.Value);
+            Append(sb, "sleeper.site", sleeper.SiteId);
+            Append(sb, "sleeper.startedOn", sleeper.StartedOnTick.Value);
+            Append(sb, "sleeper.intelPercent", sleeper.IntelPercent);
+            Append(sb, "sleeper.status", (int)sleeper.Status);
+            Append(sb, "sleeper.discoveredOn", sleeper.DiscoveredOnTick?.Value ?? -1L);
+            Append(sb, "sleeper.intelProgressHundredths", sleeper.IntelProgressHundredths);
+            Append(sb, "sleeper.snapshotOn", sleeper.SnapshotOnTick?.Value ?? -1L);
+        }
+
+        foreach (IntelSnapshot snapshot in world.IntelSnapshots.Values.OrderBy(s => s.SiteId))
+        {
+            Append(sb, "intelSnapshot.site", snapshot.SiteId);
+            Append(sb, "intelSnapshot.takenOn", snapshot.TakenOnTick.Value);
+            Append(sb, "intelSnapshot.intelPercent", snapshot.IntelPercent);
+            Append(sb, "intelSnapshot.poisoned", snapshot.IsPoisoned ? 1 : 0);
+            Append(sb, "intelSnapshot.band", (int)snapshot.Band);
+            Append(sb, "intelSnapshot.mapSeed", snapshot.MapSeed);
+            Append(sb, "intelSnapshot.entrance", snapshot.ClaimedEntrance?.Value ?? -1);
+            Append(sb, "intelSnapshot.objective", snapshot.ClaimedObjective?.Value ?? -1);
+            Append(sb, "intelSnapshot.extraction", string.Join(",", snapshot.ClaimedExtraction.Select(r => r.Value)));
+            Append(sb, "intelSnapshot.entryCount", snapshot.Entries.Count);
+
+            foreach (IntelEntry entry in snapshot.Entries)
+            {
+                Append(sb, "intelEntry.factKind", (int)entry.FactKind);
+                Append(sb, "intelEntry.confidence", (int)entry.Confidence);
+                Append(sb, "intelEntry.source", (int)entry.Source);
+
+                switch (entry)
+                {
+                    case IntelRoomEntry room:
+                        Append(sb, "intelRoom.id", room.RoomId.Value);
+                        Append(sb, "intelRoom.floor", room.FloorIndex);
+                        Append(sb, "intelRoom.startX", room.StartX.Raw);
+                        Append(sb, "intelRoom.endX", room.EndX.Raw);
+                        Append(sb, "intelRoom.nameKey", room.NameKey);
+                        Append(sb, "intelRoom.templateId", room.RoomTemplateId);
+                        Append(sb, "intelRoom.guardCount", room.GuardCount);
+                        Append(sb, "intelRoom.civilianCount", room.CivilianCount);
+                        Append(sb, "intelRoom.lightLevel", (int)room.LightLevel);
+                        Append(sb, "intelRoom.lightLevelKnown", room.LightLevelKnown ? 1 : 0);
+                        Append(sb, "intelRoom.roles", (int)room.Roles);
+                        break;
+
+                    case IntelConnectionEntry connection:
+                        Append(sb, "intelConnection.id", connection.ConnectionId.Value);
+                        Append(sb, "intelConnection.roomA", connection.RoomA.Value);
+                        Append(sb, "intelConnection.floorA", connection.FloorIndexA);
+                        Append(sb, "intelConnection.roomB", connection.RoomB.Value);
+                        Append(sb, "intelConnection.floorB", connection.FloorIndexB);
+                        Append(sb, "intelConnection.kind", (int)connection.Kind);
+                        Append(sb, "intelConnection.isVertical", connection.IsVertical ? 1 : 0);
+                        Append(sb, "intelConnection.isLocked", connection.IsLocked ? 1 : 0);
+                        break;
+
+                    case IntelPatrolEntry patrol:
+                        Append(sb, "intelPatrol.guard", patrol.GuardId.Value);
+                        Append(sb, "intelPatrol.archetype", patrol.ArchetypeId);
+                        Append(sb, "intelPatrol.role", (int)patrol.Role);
+                        Append(sb, "intelPatrol.home", patrol.HomeRoomId.Value);
+                        Append(sb, "intelPatrol.route", string.Join(",", patrol.Route.Select(r => r.Value)));
+                        break;
+
+                    case IntelHoldingEntry holding:
+                        Append(sb, "intelHolding.agent", holding.AgentId.Value);
+                        Append(sb, "intelHolding.room", holding.RoomId.Value);
+                        Append(sb, "intelHolding.ticksUntilLost", holding.TicksUntilLost);
+                        break;
+                }
+            }
+        }
+
+        foreach (CaptureRecord capture in world.Captures.OrderBy(c => c.AgentId.Value))
+        {
+            Append(sb, "capture.agent", capture.AgentId.Value);
+            Append(sb, "capture.site", capture.CaptureSiteId);
+            Append(sb, "capture.hostSite", capture.HostSiteId);
+            Append(sb, "capture.capturedOn", capture.CapturedOnTick.Value);
+            Append(sb, "capture.ticksUntilLost", capture.TicksUntilLost);
         }
     }
 

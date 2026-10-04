@@ -1,0 +1,6 @@
+##var,id,name_key,site_tier,holding_room_tags,guard_density,rescue_time_limit_days,intel_extracted_per_day,heat_per_day
+##type,int,string,int,string,int,int,int,int
+,12601,capture_site.roadside_hold,1,"storage,transit",1,7,1,2
+,12602,capture_site.office_annexe,2,"office,document",2,5,2,4
+,12603,capture_site.detention_block,3,"security,document",4,4,3,8
+,12604,capture_site.black_bunker,4,"security,storage",6,3,5,14

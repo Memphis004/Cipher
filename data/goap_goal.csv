@@ -1,0 +1,22 @@
+##var,id,name_key,priority_curve,satisfaction_condition,valid_archetypes
+##type,int,string,string,string,string
+,12201,goal.patrol,"flat:20","!HasIntruder && !NoiseHeard",any
+,12202,goal.investigate_noise,"alarm:60,curiosity:40","InspectedNoiseSource",any
+,12203,goal.investigate_sighting,"alarm:70,curiosity:50","ReachedLastKnownPosition",any
+,12204,goal.pursue_target,"alarm:90,curiosity:70","TargetLostForSteps",any
+,12205,goal.call_for_backup,"alarm:85,composure:30","BackupRequested",any
+,12206,goal.raise_alarm,"alarm:95,composure:40","AlarmRaised",any
+,12207,goal.take_cover,"self:75,alarm:40","InCover && !Exposed",any
+,12208,goal.engage,"self:60,alarm:50","TargetDown",combat
+,12209,goal.flee_and_report,"self:20,alarm:60","OutsideDangerZone",any
+,12210,goal.guard_objective,"flat:75","!ObjectiveTampered",specialist
+,12211,goal.revive_ally,"ally:80,composure:20","AllyRevived",combat
+,12212,goal.secure_prisoner,"alarm:80,compliance:40","PrisonerRestrained",specialist
+,12213,goal.restore_power,"self:50","PowerRestored",specialist
+,12214,goal.close_open_door,"order:5","SuspiciousDoorsClosed",patrol
+,12215,goal.report_missing_colleague,"alarm:75,composure:30","ColleagueReportedMissing",patrol
+,12216,goal.go_about_business,"flat:10","DayFinished",civilian
+,12217,goal.panic,"self:15,alarm:70","SafeFromAlarm",civilian
+,12218,goal.flee,"self:10,alarm:80","ReachedSafePlace",civilian
+,12219,goal.hide,"self:25,alarm:60","HiddenFromIntruder",civilian
+,12220,goal.report_to_guard,"alarm:85","GuardReached",civilian

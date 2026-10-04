@@ -1,0 +1,12 @@
+##var,id,rule_key,value
+##type,int,string,int
+,10242,goap_max_plans_per_step,6
+,10243,goap_node_budget,256
+,10244,goap_plan_max_length,12
+,10245,goap_replan_cooldown_steps,5
+,10246,goap_radio_transmit_steps,20
+,10247,goap_radio_alarm_percent,45
+,10248,goap_body_hide_quality_steps,40
+,10249,goap_missing_colleague_steps,150
+,10250,goap_suspicion_threshold,20
+,10251,goap_priority_floor,1

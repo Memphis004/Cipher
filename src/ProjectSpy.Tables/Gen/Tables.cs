@@ -41,6 +41,30 @@ public partial class Tables
     public TbBurnoutRule TbBurnoutRule {get; }
     public TbFogRule TbFogRule {get; }
     public TbNodeInteriorRule TbNodeInteriorRule {get; }
+    public TbSiteGenRule TbSiteGenRule {get; }
+    public TbInteractableType TbInteractableType {get; }
+    public TbNodeInteriorTemplate TbNodeInteriorTemplate {get; }
+    public TbSiteTemplate TbSiteTemplate {get; }
+    public TbRoomTemplate TbRoomTemplate {get; }
+    public TbLightingProfile TbLightingProfile {get; }
+    public TbLightSource TbLightSource {get; }
+    public TbConnectionType TbConnectionType {get; }
+    public TbNoiseProfile TbNoiseProfile {get; }
+    public TbGuardArchetype TbGuardArchetype {get; }
+    public TbGoapGoal TbGoapGoal {get; }
+    public TbGoapAction TbGoapAction {get; }
+    public TbAgentRole TbAgentRole {get; }
+    public TbTacticalAction TbTacticalAction {get; }
+    public TbThrowable TbThrowable {get; }
+    public TbMeleeWeapon TbMeleeWeapon {get; }
+    public TbSleeperOp TbSleeperOp {get; }
+    public TbCaptureSite TbCaptureSite {get; }
+    public TbIntelRule TbIntelRule {get; }
+    public TbGoapRule TbGoapRule {get; }
+    public TbSquadRule TbSquadRule {get; }
+    public TbObjectiveRule TbObjectiveRule {get; }
+    public TbCommandPostAbility TbCommandPostAbility {get; }
+    public TbResolveRule TbResolveRule {get; }
 
     public Tables(System.Func<string, ByteBuf> loader)
     {
@@ -72,6 +96,30 @@ public partial class Tables
         TbBurnoutRule = new TbBurnoutRule(loader("tbburnoutrule"));
         TbFogRule = new TbFogRule(loader("tbfogrule"));
         TbNodeInteriorRule = new TbNodeInteriorRule(loader("tbnodeinteriorrule"));
+        TbSiteGenRule = new TbSiteGenRule(loader("tbsitegenrule"));
+        TbInteractableType = new TbInteractableType(loader("tbinteractabletype"));
+        TbNodeInteriorTemplate = new TbNodeInteriorTemplate(loader("tbnodeinteriortemplate"));
+        TbSiteTemplate = new TbSiteTemplate(loader("tbsitetemplate"));
+        TbRoomTemplate = new TbRoomTemplate(loader("tbroomtemplate"));
+        TbLightingProfile = new TbLightingProfile(loader("tblightingprofile"));
+        TbLightSource = new TbLightSource(loader("tblightsource"));
+        TbConnectionType = new TbConnectionType(loader("tbconnectiontype"));
+        TbNoiseProfile = new TbNoiseProfile(loader("tbnoiseprofile"));
+        TbGuardArchetype = new TbGuardArchetype(loader("tbguardarchetype"));
+        TbGoapGoal = new TbGoapGoal(loader("tbgoapgoal"));
+        TbGoapAction = new TbGoapAction(loader("tbgoapaction"));
+        TbAgentRole = new TbAgentRole(loader("tbagentrole"));
+        TbTacticalAction = new TbTacticalAction(loader("tbtacticalaction"));
+        TbThrowable = new TbThrowable(loader("tbthrowable"));
+        TbMeleeWeapon = new TbMeleeWeapon(loader("tbmeleeweapon"));
+        TbSleeperOp = new TbSleeperOp(loader("tbsleeperop"));
+        TbCaptureSite = new TbCaptureSite(loader("tbcapturesite"));
+        TbIntelRule = new TbIntelRule(loader("tbintelrule"));
+        TbGoapRule = new TbGoapRule(loader("tbgoaprule"));
+        TbSquadRule = new TbSquadRule(loader("tbsquadrule"));
+        TbObjectiveRule = new TbObjectiveRule(loader("tbobjectiverule"));
+        TbCommandPostAbility = new TbCommandPostAbility(loader("tbcommandpostability"));
+        TbResolveRule = new TbResolveRule(loader("tbresolverule"));
         ResolveRef();
     }
     
@@ -105,6 +153,30 @@ public partial class Tables
         TbBurnoutRule.ResolveRef(this);
         TbFogRule.ResolveRef(this);
         TbNodeInteriorRule.ResolveRef(this);
+        TbSiteGenRule.ResolveRef(this);
+        TbInteractableType.ResolveRef(this);
+        TbNodeInteriorTemplate.ResolveRef(this);
+        TbSiteTemplate.ResolveRef(this);
+        TbRoomTemplate.ResolveRef(this);
+        TbLightingProfile.ResolveRef(this);
+        TbLightSource.ResolveRef(this);
+        TbConnectionType.ResolveRef(this);
+        TbNoiseProfile.ResolveRef(this);
+        TbGuardArchetype.ResolveRef(this);
+        TbGoapGoal.ResolveRef(this);
+        TbGoapAction.ResolveRef(this);
+        TbAgentRole.ResolveRef(this);
+        TbTacticalAction.ResolveRef(this);
+        TbThrowable.ResolveRef(this);
+        TbMeleeWeapon.ResolveRef(this);
+        TbSleeperOp.ResolveRef(this);
+        TbCaptureSite.ResolveRef(this);
+        TbIntelRule.ResolveRef(this);
+        TbGoapRule.ResolveRef(this);
+        TbSquadRule.ResolveRef(this);
+        TbObjectiveRule.ResolveRef(this);
+        TbCommandPostAbility.ResolveRef(this);
+        TbResolveRule.ResolveRef(this);
     }
 }
 

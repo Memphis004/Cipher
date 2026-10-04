@@ -112,12 +112,12 @@ public class TickTests
         Assert.Equal(-3, Tick.FromDays(7).DaysUntil(Tick.FromDays(4)));
     }
 
-    // ---- GameClock -----------------------------------------------------------
+    // ---- StrategicClock -------------------------------------------------------
 
     [Fact]
     public void Clock_Advance_MovesOneTickAtATime()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
 
         clock.Advance();
 
@@ -128,7 +128,7 @@ public class TickTests
     [Fact]
     public void Clock_RaisesTickDayAndWeekEvents_AtTheRightTicks()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         var ticks = new List<long>();
         var days = new List<int>();
         var weeks = new List<int>();
@@ -148,7 +148,7 @@ public class TickTests
     [Fact]
     public void Clock_WeekBoundary_RaisesDayThenWeek()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         var order = new List<string>();
 
         using IDisposable _a = clock.OnDayChanged(_ => order.Add("day"));
@@ -169,7 +169,7 @@ public class TickTests
     [Fact]
     public void Clock_RaisesExactlyOneDayEventPerMidnight()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         int dayEvents = 0;
         using IDisposable _ = clock.OnDayChanged(_ => dayEvents++);
 
@@ -181,14 +181,14 @@ public class TickTests
     [Fact]
     public void Clock_Advance_RejectsNegativeSteps()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         Assert.Throws<ArgumentOutOfRangeException>(() => clock.Advance(-1));
     }
 
     [Fact]
     public void Clock_SetTo_MovesForwardAndRaisesEvents()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         int days = 0;
         using IDisposable _ = clock.OnDayChanged(_ => days++);
 
@@ -201,7 +201,7 @@ public class TickTests
     [Fact]
     public void Clock_Unsubscribe_StopsDelivery()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         int count = 0;
 
         IDisposable subscription = clock.OnTick(_ => count++);
@@ -217,7 +217,7 @@ public class TickTests
     [Fact]
     public void Clock_OverALongRun_CountsMatchArithmetic()
     {
-        var clock = new GameClock();
+        var clock = new StrategicClock();
         const int totalTicks = Tick.TicksPerDay * 365;
 
         clock.Advance(totalTicks);

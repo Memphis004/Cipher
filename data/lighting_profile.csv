@@ -1,0 +1,8 @@
+##var,id,name_key,emitter_ids,ambient_percent,shadow_chance_percent
+##type,int,string,string,int,int
+,11101,lighting.industrial,"12251,12252,12253",35,20
+,11102,lighting.residential,"12251,12254",55,15
+,11103,lighting.commercial,"12251,12252,12255",45,10
+,11104,lighting.industrial_secure,"12252,12253,12256",30,30
+,11105,lighting.high_security,"12253,12256,12257",25,40
+,11106,lighting.black_site,"12256,12257,12258",15,55

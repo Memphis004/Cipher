@@ -363,7 +363,7 @@ public static class MissionMapGenerator
 
         NodeRoom room = useSecurity ? WeightedRoom(rng, securityRooms) : WeightedRoom(rng, rooms);
 
-        return new MissionNode
+        var node = new MissionNode
         {
             Id = id,
             Kind = kind,
@@ -375,6 +375,41 @@ public static class MissionMapGenerator
             NoiseModifier = room.NoiseModifier,
             CandidateEventIds = SimulationRules.IntList(room.PossibleEventIds),
         };
+
+        // The guard count is committed to the skeleton here, before any interior
+        // exists, because fog of war has to be able to report a guard band for a room
+        // nobody has entered. See MissionNode.GuardCount for why that rules out
+        // reading it back out of the contents.
+        //
+        // The floor keys off the node's own tags rather than the `useSecurity` flag,
+        // because `rooms` includes the security rooms: a transit node can be assigned a
+        // security room by the ordinary weighted pick, in which case `useSecurity` is
+        // false while the node is plainly a guard post. Reading the flag here produced
+        // security-tagged nodes holding zero guards — a vault the player walks through
+        // unopposed, and a scout sight promising a guarded room that holds none.
+        node.AssignGuardCount(RollGuardCount(rng, room, node.IsSecurity));
+
+        return node;
+    }
+
+    /// <summary>
+    /// How many guards this node will hold.
+    /// </summary>
+    /// <remarks>
+    /// Bounded by <c>room_template.guard_max</c>, and floored at one for a security
+    /// node. The floor is what makes "every route to the Objective crosses a guard"
+    /// true in practice rather than only in the security-checkpoint layer: a vault
+    /// that rolled zero guards would be a vault the player walks through unopposed,
+    /// and a guard post is not a suggestion.
+    /// </remarks>
+    private static int RollGuardCount(IRng rng, NodeRoom room, bool isSecurity)
+    {
+        int max = SimulationRules.RoomTemplateFor(room.Id)?.GuardMax ?? DefaultGuardMax;
+
+        if (isSecurity)
+            return Math.Max(1, rng.NextInt(1, max + 1));
+
+        return max <= 0 ? 0 : rng.NextInt(0, max + 1);
     }
 
     private static NodeRoom WeightedRoom(IRng rng, IReadOnlyList<NodeRoom> rooms)
@@ -403,6 +438,16 @@ public static class MissionMapGenerator
     private const int DefaultSecurityRoomRatio = 25;
     private const int DefaultLootNodeRatio = 15;
     private const int DefaultGuaranteedAltRoutes = 1;
+
+    /// <summary>
+    /// Guard cap used when a node room has no <c>room_template</c> row.
+    /// </summary>
+    /// <remarks>
+    /// One, because it is the smallest cap that still lets the security floor do
+    /// anything: without a template a room holds at most one guard, and a security room
+    /// holds exactly one. The validator is what keeps this unreachable.
+    /// </remarks>
+    private const int DefaultGuardMax = 1;
 
     /// <summary>
     /// How many edges a single layer may gain while topping up the route count.

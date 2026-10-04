@@ -25,6 +25,7 @@ public sealed partial class Gadget : Luban.BeanBase
         EffectType = _buf.ReadString();
         EffectValue = _buf.ReadInt();
         RequiredRoomLevel = _buf.ReadInt();
+        Weight = _buf.ReadInt();
     }
 
     public static Gadget DeserializeGadget(ByteBuf _buf)
@@ -41,6 +42,7 @@ public sealed partial class Gadget : Luban.BeanBase
     public readonly string EffectType;
     public readonly int EffectValue;
     public readonly int RequiredRoomLevel;
+    public readonly int Weight;
    
     public const int __ID__ = 2125332588;
     public override int GetTypeId() => __ID__;
@@ -61,6 +63,7 @@ public sealed partial class Gadget : Luban.BeanBase
         + "effectType:" + EffectType + ","
         + "effectValue:" + EffectValue + ","
         + "requiredRoomLevel:" + RequiredRoomLevel + ","
+        + "weight:" + Weight + ","
         + "}";
     }
 }
