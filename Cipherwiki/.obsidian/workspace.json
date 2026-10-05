@@ -11,10 +11,10 @@
             "id": "ec111948e2aad2f0",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -183,6 +183,7 @@
   },
   "active": "ec111948e2aad2f0",
   "lastOpenFiles": [
+    "wiki/concepts/core-purity.md",
     "raw/doc/ARCHITECTURE.md",
     "wiki/sources/ARCHITECTURE.md",
     "wiki/design/core-fantasy.md",
@@ -208,7 +209,6 @@
     "wiki/design/heat-and-counter-intel.md",
     "wiki/design/mission-and-fog-of-war.md",
     "wiki/design/base-building.md",
-    "wiki/design/core-loop.md",
     "wiki/systems",
     "wiki/sources",
     "wiki/queries",

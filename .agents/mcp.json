@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "ai-game-developer": {
-      "type": "http",
-      "url": "http://localhost:25116/p/6c5c99b2"
+    "unity-cli": {
+      "command": "unity",
+      "args": ["mcp"]
     },
     "blender": {
       "type": "local",

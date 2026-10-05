@@ -665,10 +665,6 @@
       <HintPath>Assets\Plugins\NuGet\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="MessagePack">
-      <HintPath>Assets\Packages\MessagePack.2.5.187\lib\netstandard2.0\MessagePack.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System.Diagnostics.DiagnosticSource">
       <HintPath>Assets\Plugins\NuGet\System.Diagnostics.DiagnosticSource.dll</HintPath>
       <Private>False</Private>
@@ -709,20 +705,28 @@
       <HintPath>Assets\Plugins\NuGet\Microsoft.Extensions.Hosting.Abstractions.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="MessagePack.Annotations">
+      <HintPath>Assets\Packages\MessagePack.Annotations.2.5.187\lib\netstandard2.0\MessagePack.Annotations.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Microsoft.CodeAnalysis">
       <HintPath>Assets\Plugins\NuGet\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
-      <HintPath>Assets\Plugins\NuGet\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    <Reference Include="UnityPipeline.Microsoft.CodeAnalysis.CSharp">
+      <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.Microsoft.CodeAnalysis.CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Collections.Immutable">
-      <HintPath>Assets\Plugins\NuGet\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="MessagePack">
+      <HintPath>Assets\Packages\MessagePack.2.5.187\lib\netstandard2.0\MessagePack.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ReflectorNet">
       <HintPath>Assets\Plugins\NuGet\ReflectorNet.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.NET.StringTools">
+      <HintPath>Assets\Packages\Microsoft.NET.StringTools.17.6.3\lib\netstandard2.0\Microsoft.NET.StringTools.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ProjectSpy.Tables">
@@ -785,16 +789,12 @@
       <HintPath>Assets\Plugins\NuGet\System.Text.Encodings.Web.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Microsoft.NET.StringTools">
-      <HintPath>Assets\Packages\Microsoft.NET.StringTools.17.6.3\lib\netstandard2.0\Microsoft.NET.StringTools.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Microsoft.AspNetCore.SignalR.Protocols.Json">
       <HintPath>Assets\Plugins\NuGet\Microsoft.AspNetCore.SignalR.Protocols.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="MessagePack.Annotations">
-      <HintPath>Assets\Packages\MessagePack.Annotations.2.5.187\lib\netstandard2.0\MessagePack.Annotations.dll</HintPath>
+    <Reference Include="UnityPipeline.System.Runtime.CompilerServices.Unsafe">
+      <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.Bcl.TimeProvider">
@@ -811,6 +811,14 @@
     </Reference>
     <Reference Include="Microsoft.Extensions.Diagnostics.Abstractions">
       <HintPath>Assets\Plugins\NuGet\Microsoft.Extensions.Diagnostics.Abstractions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityPipeline.System.Collections.Immutable">
+      <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.System.Collections.Immutable.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>Assets\Plugins\NuGet\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
@@ -833,6 +841,10 @@
       <HintPath>Assets\Plugins\NuGet\Microsoft.Extensions.Logging.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>Assets\Plugins\NuGet\System.Collections.Immutable.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Microsoft.Extensions.Options">
       <HintPath>Assets\Plugins\NuGet\Microsoft.Extensions.Options.dll</HintPath>
       <Private>False</Private>
@@ -845,24 +857,12 @@
       <HintPath>Assets\Plugins\NuGet\Microsoft.AspNetCore.Http.Connections.Client.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Microsoft.AspNetCore.Http.Connections.Common">
-      <HintPath>Assets\Plugins\NuGet\Microsoft.AspNetCore.Http.Connections.Common.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityPipeline.Microsoft.CodeAnalysis.CSharp">
-      <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.Microsoft.CodeAnalysis.CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityPipeline.System.Runtime.CompilerServices.Unsafe">
-      <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="UnityPipeline.System.Reflection.Metadata">
       <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.System.Reflection.Metadata.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityPipeline.System.Collections.Immutable">
-      <HintPath>Library\PackageCache\com.unity.pipeline@62c08c808737\Runtime\Plugins\CodeAnalysis\UnityPipeline.System.Collections.Immutable.dll</HintPath>
+    <Reference Include="Microsoft.AspNetCore.Http.Connections.Common">
+      <HintPath>Assets\Plugins\NuGet\Microsoft.AspNetCore.Http.Connections.Common.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityPipeline.Microsoft.CodeAnalysis">
@@ -1541,12 +1541,12 @@
       <HintPath>Library\ScriptAssemblies\Unity.2D.Psdimporter.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Unity.VisualScripting.Flow">
-      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Unity.Pipeline">
       <HintPath>Library\ScriptAssemblies\Unity.Pipeline.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Flow">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
